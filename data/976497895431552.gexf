@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gexf xmlns="http://www.gexf.net/1.2draft" version="1.2">
+	<graph mode="dynamic" defaultedgetype="undirected" timeformat="date" start="2012-09-01" 
+	end="2012-09-25">
+	
+		<attributes class="node">
+			<attribute id="1" title="value" type="float"/>
+	 	</attributes>
+        
+		<nodes>
+            <node id="0" label="Small" start="2012-09-03" end="2012-09-20">
+				<attvalues>
+					<attvalue for="1" value="3"/>
+				</attvalues>
+			</node>
+            <node id="1" label="Example" start="2012-09-05" end="2012-09-25">
+				<attvalues>
+					<attvalue for="1" value="2"/>
+				</attvalues>
+			</node>
+			<node id="2" label="Example2" start="2012-09-05" end="2012-09-25">
+				<attvalues>
+					<attvalue for="1" value="2"/>
+				</attvalues>
+			</node>
+        
+			<node id="3" label="Example" start="2012-09-13" end="2012-09-25">
+				<attvalues>
+					<attvalue for="1" value="2"/>
+				</attvalues>
+			</node>
+        </nodes>
+
+        <edges>
+            <edge id="0" source="0" target="1" />
+			<edge id="1" source="1" target="3" />
+			<edge id="2" source="1" target="2" />
+        </edges>
+    </graph>
+</gexf>

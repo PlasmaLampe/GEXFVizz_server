@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<gexf xmlns="http://www.gexf.net/1.2draft" version="1.2">
+    <graph mode="dynamic" defaultedgetype="undirected" timeformat="date">
+        <nodes>
+            	<node id="1" label="Roberto Vaccaro"></node>
+		<node id="2" label="Mike Farmer" ></node>
+		<node id="3" label="Paul D Rudman" ></node>
+		<node id="4" label="Geoff Stead" ></node>
+		<node id="5" label="Professor Simon Robertshaw" ></node>
+		<node id="6" label="Oliver Holme" ></node>
+		<node id="7" label="Gerhard Weber" ></node>
+		<node id="8" label="Tom Rogers" ></node>
+        </nodes>
+        <edges>
+            <edge id="1" source="1" target="4">
+            </edge>
+            <edge id="2" source="3" target="6">
+            </edge>
+        </edges>
+    </graph>
+</gexf>
