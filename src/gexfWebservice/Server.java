@@ -44,7 +44,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		// new stuff
 		Gephi gephi = new Gephi();
 		String result = gephi.getMetrics(path);
-
+		
 		return result;
 	}
 

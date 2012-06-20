@@ -22,10 +22,13 @@ import org.gephi.statistics.plugin.GraphDistance;
 import org.openide.util.Lookup;
 
 class MyNode{
-	int id;
+	int id;			// 'real id' of the graph file
+	int systemID;	// this id is gephi specific and is needed for computations
 	double value;
-	MyNode(int id, double value){
+	
+	MyNode(int id, int systemID, double value){
 		this.id = id;
+		this.systemID = systemID;
 		this.value = value;
 	}
 }
@@ -181,13 +184,13 @@ public class Gephi{
 		//Iterate over values
 		for (Node n : graph.getNodes()) {
 		   Double centrality = (Double)n.getNodeData().getAttributes().getValue(centralityColumn.getIndex());
-		   cc.add(new MyNode(n.getId(),centrality));
+		   cc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),centrality));
 		}
 		
 		//Iterate over values
 		for (Node n : graph.getNodes()) {
 		   Double centrality = (Double)n.getNodeData().getAttributes().getValue(betweennessColumn.getIndex());
-		   bc.add(new MyNode(n.getId(),centrality));
+		   bc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),centrality));
 		}
 		
 		Collections.sort(cc,new NodeComparator());
@@ -195,7 +198,7 @@ public class Gephi{
 		
 		String output = "<top>\n\t<closenessCentrality>\n";
 		for(int i=0; i < cc.size(); i++){
-			String clearlabel = graph.getNode(cc.get(i).id).getNodeData().getLabel();
+			String clearlabel = graph.getNode(cc.get(i).systemID).getNodeData().getLabel();
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
 			
 			output += "\t\t<ranks>\n " +
@@ -209,7 +212,7 @@ public class Gephi{
 		
 		output += "\t<betweennessCentrality>\n";
 		for(int i=0; i < bc.size(); i++){
-			String clearlabel = graph.getNode(bc.get(i).id).getNodeData().getLabel();
+			String clearlabel = graph.getNode(bc.get(i).systemID).getNodeData().getLabel();
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
 			
 			output += "\t\t<ranks>\n " +
