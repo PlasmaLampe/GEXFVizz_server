@@ -3,7 +3,6 @@ package gexfWebservice;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
 import org.gephi.data.attributes.api.AttributeColumn;
 import org.gephi.data.attributes.api.AttributeController;
@@ -12,35 +11,30 @@ import org.gephi.graph.api.DirectedGraph;
 import org.gephi.graph.api.GraphController;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.Node;
+import org.gephi.graph.api.UndirectedGraph;
 import org.gephi.io.importer.api.Container;
 import org.gephi.io.importer.api.ImportController;
 import org.gephi.io.processor.plugin.DefaultProcessor;
 import org.gephi.project.api.ProjectController;
 import org.gephi.project.api.Workspace;
+import org.gephi.statistics.plugin.Degree;
 import org.gephi.statistics.plugin.GraphDensity;
 import org.gephi.statistics.plugin.GraphDistance;
 import org.openide.util.Lookup;
 
-class MyNode{
-	int id;			// 'real id' of the graph file
-	int systemID;	// this id is gephi specific and is needed for computations
-	double value;
-	
-	MyNode(int id, int systemID, double value){
-		this.id = id;
-		this.systemID = systemID;
-		this.value = value;
-	}
-}
-
-class NodeComparator implements Comparator<MyNode> {
-    @Override
-    public int compare(MyNode o1, MyNode o2) {
-        return (int)((o2.value * 100) - (o1.value * 100));
-    }
-}
-
 public class Gephi{
+	/**
+	 * This methods rounds a given double value 
+	 * @param value
+	 * @return rounded double value
+	 */
+	private double roundTwoD(double value) {
+		double result = value * 100;
+		result = Math.round(result);
+		result = result / 100;
+		return result;
+	}
+	
 	/**
 	 * returns the #nodes of the given file
 	 * @param path The file which should be checked
@@ -170,31 +164,55 @@ public class Gephi{
 		//Append imported data to GraphAPI
 		importController.process(container, new DefaultProcessor(), workspace);
 
-		DirectedGraph graph = graphModel.getDirectedGraph();
+		UndirectedGraph graph = graphModel.getUndirectedGraph();
 		GraphDistance distance = new GraphDistance();
 		distance.setDirected(false);
 		distance.execute(graphModel, attributeModel);
+		
+		Degree deg = new Degree();
+		deg.execute(graphModel, attributeModel);
 		 
 		AttributeColumn betweennessColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
-		AttributeColumn centralityColumn = attributeModel.getNodeTable().getColumn(GraphDistance.CLOSENESS);
+		AttributeColumn closenessColumn = attributeModel.getNodeTable().getColumn(GraphDistance.CLOSENESS);
+		AttributeColumn degreeColumn = attributeModel.getNodeTable().getColumn(Degree.DEGREE);
 		
 		ArrayList<MyNode> cc = new ArrayList<MyNode>();
 		ArrayList<MyNode> bc = new ArrayList<MyNode>();
+		ArrayList<MyNode> dc = new ArrayList<MyNode>();
+		
+		int cnodes = graph.getNodeCount();
 		
 		//Iterate over values
 		for (Node n : graph.getNodes()) {
-		   Double centrality = (Double)n.getNodeData().getAttributes().getValue(centralityColumn.getIndex());
-		   cc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),centrality));
+		   Double centrality = (Double)n.getNodeData().getAttributes().getValue(closenessColumn.getIndex());
+		   
+			// use the reciprocal of the value calculated by Gephi
+			double standardizedCloseness = roundTwoD(1 / centrality);
+			
+		   cc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),standardizedCloseness));
 		}
 		
 		//Iterate over values
 		for (Node n : graph.getNodes()) {
 		   Double centrality = (Double)n.getNodeData().getAttributes().getValue(betweennessColumn.getIndex());
-		   bc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),centrality));
+		   
+		   double standardizedBetweenness = roundTwoD(centrality / (((cnodes - 1) * (cnodes - 2))/2));
+			
+		   bc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),standardizedBetweenness));
+		}
+		
+		//Iterate over values
+		for (Node n : graph.getNodes()) {
+		   int centrality = (Integer)n.getNodeData().getAttributes().getValue(degreeColumn.getIndex());
+		   
+		   double standardizedDegree = roundTwoD((double) ((double) centrality / (double) (cnodes -1)));
+		   
+		   dc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),standardizedDegree));
 		}
 		
 		Collections.sort(cc,new NodeComparator());
 		Collections.sort(bc,new NodeComparator());
+		Collections.sort(dc,new NodeComparator());
 		
 		String output = "<top>\n\t<closenessCentrality>\n";
 		for(int i=0; i < cc.size(); i++){
@@ -222,9 +240,22 @@ public class Gephi{
 					"\t\t\t<value>"+ bc.get(i).value + "</value>\n" +
 							"\t\t</ranks>\n";
 		}
-		output+="\t</betweennessCentrality>\n</top>";
+		output +="\t</betweennessCentrality>\n";
 		
-		//System.out.println(output);
+		output += "\t<degreeCentrality>\n";
+		for(int i=0; i < dc.size(); i++){
+			String clearlabel = graph.getNode(dc.get(i).systemID).getNodeData().getLabel();
+			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
+			
+			output += "\t\t<ranks>\n " +
+					"\t\t\t<place>"+ (i+1) +"</place>\n " +
+					"\t\t\t<id>" + dc.get(i).id + "</id>\n" +
+					"\t\t\t<label>"+ clearedlabel +"</label>\n" + 
+					"\t\t\t<value>"+ dc.get(i).value + "</value>\n" +
+							"\t\t</ranks>\n";
+		}
+		output +="\t</degreeCentrality>\n</top>";
+		
 		return output;
 	}
 	
