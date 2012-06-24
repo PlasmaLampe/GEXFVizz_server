@@ -186,10 +186,12 @@ public class Gephi{
 		for (Node n : graph.getNodes()) {
 		   Double centrality = (Double)n.getNodeData().getAttributes().getValue(closenessColumn.getIndex());
 		   
+		   double standardizedCloseness = 0;
 			// use the reciprocal of the value calculated by Gephi
-			double standardizedCloseness = roundTwoD(1 / centrality);
+			if(centrality != 0.0)
+				standardizedCloseness = roundTwoD(1 / centrality);
 			
-		   cc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),standardizedCloseness));
+		   cc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedCloseness));
 		}
 		
 		//Iterate over values
@@ -198,7 +200,7 @@ public class Gephi{
 		   
 		   double standardizedBetweenness = roundTwoD(centrality / (((cnodes - 1) * (cnodes - 2))/2));
 			
-		   bc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),standardizedBetweenness));
+		   bc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedBetweenness));
 		}
 		
 		//Iterate over values
@@ -207,7 +209,7 @@ public class Gephi{
 		   
 		   double standardizedDegree = roundTwoD((double) ((double) centrality / (double) (cnodes -1)));
 		   
-		   dc.add(new MyNode(Integer.parseInt(n.getNodeData().getId()),n.getId(),standardizedDegree));
+		   dc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedDegree));
 		}
 		
 		Collections.sort(cc,new NodeComparator());
