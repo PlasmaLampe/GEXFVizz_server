@@ -292,7 +292,7 @@ class CoCitationGraph extends GephiGraph{
 			// look at the 'citedTogether' map and create edges
 			for(String paper : citedMap.keySet()){
 				gexfGraph += "\t\t\t<edge id=\""+ countEdges +"\" source=\""+ publication +
-						"\" target=\""+ paper +"\" weight="+ citedMap.get(paper) +"\"></edge>\n";
+						"\" target=\""+ paper +"\" weight=\""+ citedMap.get(paper) +"\"></edge>\n";
 						
 				countEdges++;
 			}
@@ -368,7 +368,7 @@ class BibliographicCouplingGraph extends GephiGraph{
 			// look at the 'bibliograpic coupling' map and create edges
 			for(String paper : bc.keySet()){
 				gexfGraph += "\t\t\t<edge id=\""+ countEdges +"\" source=\""+ publication +
-						"\" target=\""+ paper +"\" weight="+ bc.get(paper) +"\"></edge>\n";
+						"\" target=\""+ paper +"\" weight=\""+ bc.get(paper) +"\"></edge>\n";
 						
 				countEdges++;
 			}
