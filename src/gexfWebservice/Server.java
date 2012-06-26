@@ -144,20 +144,25 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			ggraph = new CoCitationGraph(eventid, eventseriesid, syear, eyear);
 			break;
 		case "bc":
+			ggraph = new BibliographicCouplingGraph(eventid, eventseriesid, syear, eyear);
 			break;
 		}
 		
 		ggraph.connectToDB(Settings.DB_CONNECTOR, Settings.DB_USER, Settings.DB_PASSWORD);
-		ggraph.init();
-		ggraph.calculateGraph();
-		String graph = ggraph.getGexfGraph();
-		String hashname = hashStringSHA256(graph);
+		boolean init_finished = ggraph.init();
+		if( init_finished ){
+			ggraph.calculateGraph();
+			String graph = ggraph.getGexfGraph();
+			String hashname = hashStringSHA256(graph);
+
+			String filename = Settings.APACHE_PATH + "hash/" + hashname + ".gexf";
+			doesFileExist(filename, graph);
+			ggraph.close();
+			return Settings.DOMAIN_PREFIX + hashname;
+		}else{
+			return Settings.DOMAIN_PREFIX + "ERROR";
+		}
 		
-		String filename = Settings.APACHE_PATH + "hash/" + hashname + ".gexf";
-		doesFileExist(filename, graph);
-		ggraph.close();
-		
-		return Settings.DOMAIN_PREFIX + hashname;
 	}
 
 }

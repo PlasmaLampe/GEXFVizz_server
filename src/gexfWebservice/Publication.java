@@ -5,20 +5,24 @@ import java.util.HashMap;
 
 public class Publication{
 	private String id;
-	private ArrayList<String> cites;
-	private HashMap<String, Integer> citedTogetherWith;
+	private ArrayList<String> cites; // publications that are cited by this one
+	private HashMap<String, Integer> citedTogetherWith; // needed for Co-Citation
+	private HashMap<String, Integer> bibliograpiccoupling;
 	private String title;
+	private ArrayList<String> getCitedBy; // publication that cite this one
 	
 	/**
 	 * @param id
 	 * @param cites
 	 */
-	public Publication(String id, String title, ArrayList<String> cites) {
+	public Publication(String id, String title, ArrayList<String> cites, ArrayList<String> getCitedBy) {
 		super();
 		this.id = id;
 		this.cites = cites;
 		this.title = title;
 		this.citedTogetherWith = new HashMap<String, Integer>();
+		this.bibliograpiccoupling = new HashMap<String, Integer>();
+		this.getCitedBy = getCitedBy;
 	}
 	
 	public void addPaperThatHasBeenCitedWithThisOne(String paper){
@@ -31,7 +35,31 @@ public class Publication{
 		}
 	}
 	
+	public void addBibliographicCouplingTo(String paper){
+		if(bibliograpiccoupling.containsKey(paper)){
+			int count = bibliograpiccoupling.get(paper);
+			bibliograpiccoupling.remove(paper);
+			bibliograpiccoupling.put(paper, count+1);
+		}else{
+			bibliograpiccoupling.put(paper, 1);
+		}
+	}
 	
+	
+	/**
+	 * @return the bibliograpiccoupling
+	 */
+	public HashMap<String, Integer> getBibliograpiccoupling() {
+		return bibliograpiccoupling;
+	}
+
+	/**
+	 * @return the getCitedBy
+	 */
+	public ArrayList<String> getGetCitedBy() {
+		return getCitedBy;
+	}
+
 	/**
 	 * @return the citedTogetherWith
 	 */
