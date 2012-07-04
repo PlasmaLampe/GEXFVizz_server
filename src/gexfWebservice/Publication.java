@@ -35,14 +35,8 @@ public class Publication{
 		}
 	}
 	
-	public void addBibliographicCouplingTo(String paper){
-		if(bibliograpiccoupling.containsKey(paper)){
-			int count = bibliograpiccoupling.get(paper);
-			bibliograpiccoupling.remove(paper);
-			bibliograpiccoupling.put(paper, count+1);
-		}else{
-			bibliograpiccoupling.put(paper, 1);
-		}
+	public void addBibliographicCouplingTo(String paper, int value){
+		bibliograpiccoupling.put(paper, value);
 	}
 	
 	

@@ -191,7 +191,7 @@ public class Gephi{
 			if(centrality != 0.0)
 				standardizedCloseness = roundTwoD(1 / centrality);
 			
-		   cc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedCloseness));
+		   cc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedCloseness, centrality));
 		}
 		
 		//Iterate over values
@@ -200,7 +200,7 @@ public class Gephi{
 		   
 		   double standardizedBetweenness = roundTwoD(centrality / (((cnodes - 1) * (cnodes - 2))/2));
 			
-		   bc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedBetweenness));
+		   bc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedBetweenness, centrality));
 		}
 		
 		//Iterate over values
@@ -209,7 +209,7 @@ public class Gephi{
 		   
 		   double standardizedDegree = roundTwoD((double) ((double) centrality / (double) (cnodes -1)));
 		   
-		   dc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedDegree));
+		   dc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedDegree, centrality));
 		}
 		
 		Collections.sort(cc,new NodeComparator());
@@ -218,42 +218,45 @@ public class Gephi{
 		
 		String output = "<top>\n\t<closenessCentrality>\n";
 		for(int i=0; i < cc.size(); i++){
-			String clearlabel = graph.getNode(cc.get(i).systemID).getNodeData().getLabel();
+			String clearlabel = graph.getNode(cc.get(i).getSystemID()).getNodeData().getLabel();
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
 			
 			output += "\t\t<ranks>\n " +
 					"\t\t\t<place>"+ (i+1) +"</place>\n " +
-					"\t\t\t<id>" + cc.get(i).id + "</id>\n" +
+					"\t\t\t<id>" + cc.get(i).getId() + "</id>\n" +
 					"\t\t\t<label>"+ clearedlabel +"</label>\n" + 
-					"\t\t\t<value>"+ cc.get(i).value + "</value>\n" +
+					"\t\t\t<svalue>"+ cc.get(i).getStandardizedValue() + "</svalue>\n" +
+					"\t\t\t<value>"+ cc.get(i).getValue() + "</value>\n" +
 							"\t\t</ranks>\n";
 		}
 		output +="\t</closenessCentrality>\n";
 		
 		output += "\t<betweennessCentrality>\n";
 		for(int i=0; i < bc.size(); i++){
-			String clearlabel = graph.getNode(bc.get(i).systemID).getNodeData().getLabel();
+			String clearlabel = graph.getNode(bc.get(i).getSystemID()).getNodeData().getLabel();
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
 			
 			output += "\t\t<ranks>\n " +
 					"\t\t\t<place>"+ (i+1) +"</place>\n " +
-					"\t\t\t<id>" + bc.get(i).id + "</id>\n" +
+					"\t\t\t<id>" + bc.get(i).getId() + "</id>\n" +
 					"\t\t\t<label>"+ clearedlabel +"</label>\n" + 
-					"\t\t\t<value>"+ bc.get(i).value + "</value>\n" +
+					"\t\t\t<svalue>"+ bc.get(i).getStandardizedValue() + "</svalue>\n" +
+					"\t\t\t<value>"+ bc.get(i).getValue() + "</value>\n" +
 							"\t\t</ranks>\n";
 		}
 		output +="\t</betweennessCentrality>\n";
 		
 		output += "\t<degreeCentrality>\n";
 		for(int i=0; i < dc.size(); i++){
-			String clearlabel = graph.getNode(dc.get(i).systemID).getNodeData().getLabel();
+			String clearlabel = graph.getNode(dc.get(i).getSystemID()).getNodeData().getLabel();
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
 			
 			output += "\t\t<ranks>\n " +
 					"\t\t\t<place>"+ (i+1) +"</place>\n " +
-					"\t\t\t<id>" + dc.get(i).id + "</id>\n" +
+					"\t\t\t<id>" + dc.get(i).getId() + "</id>\n" +
 					"\t\t\t<label>"+ clearedlabel +"</label>\n" + 
-					"\t\t\t<value>"+ dc.get(i).value + "</value>\n" +
+					"\t\t\t<svalue>"+ dc.get(i).getStandardizedValue() + "</svalue>\n" +
+					"\t\t\t<value>"+ dc.get(i).getValue() + "</value>\n" +
 							"\t\t</ranks>\n";
 		}
 		output +="\t</degreeCentrality>\n</top>";

@@ -206,9 +206,7 @@ public class GephiGraph {
 
 		} catch(Exception e) {
 			System.err.println("Exception: " + e.getMessage());
-		} 
-			  
-			
+		} 	  	
 	}
 
 	/**
@@ -245,10 +243,11 @@ class CoCitationGraph extends GephiGraph{
 				for(String othercitedPaper : cites){
 					if(!othercitedPaper.equals(citedPaper)){
 						Publication tpub = mapOfPublications.get(citedPaper);
-						if(tpub!=null){
+						Publication tpub2 = mapOfPublications.get(othercitedPaper);
+						if(tpub != null && tpub2 != null){
 							tpub.addPaperThatHasBeenCitedWithThisOne(othercitedPaper);
 						}else{
-							System.out.println("Error: publication was not found on this conference");
+							System.out.println("Error: one publication was not found on this conference");
 						}
 					}
 				}
@@ -313,22 +312,43 @@ class BibliographicCouplingGraph extends GephiGraph{
 		super.calculateGraph();
 		
 		// generate bibliographic coupling:
-		// get paper that cite this one and report this fact to them :)
 		for(String pub : setOfPublicationIDs){
-			ArrayList<String> getCitedBy = mapOfPublications.get(pub).getGetCitedBy();
+			try {
+				Statement idstmt = con.createStatement();		
+				String idQuery = "SELECT publication2_id,count FROM bib_coupling WHERE publication1_id=" +
+						"\"" + pub + "\"";
+				ResultSet rsid = idstmt.executeQuery( idQuery );
+				while( rsid.next() ){
+					// is the other publication part of the choosen events ?
+					String pubid = rsid.getString(1);
+					int value = Integer.parseInt(rsid.getString(2));
+					Publication checkPub = mapOfPublications.get(pubid);
+					if(checkPub != null){
+						mapOfPublications.get(pub).addBibliographicCouplingTo(pubid, value);
+					}
+				}
+				rsid.close();
+				idstmt.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
+			//ArrayList<String> getCitedBy = mapOfPublications.get(pub).getGetCitedBy();
+			
+			/*
 			for(String paperA : getCitedBy){
 				for(String paperB : getCitedBy){
 					if(!paperA.equals(paperB)){
 						Publication tpub = mapOfPublications.get(paperA);
-						if(tpub!=null){
+						if(tpub != null){
 							tpub.addBibliographicCouplingTo(paperB);
 						}else{
-							System.out.println("Error: publication was not found on this conference");
+							System.out.println("Error: one publication was not found on this conference");
 						}
 					}
 				}
-			}
+			}*/
 		}
 		
 		// Create GEXF file
