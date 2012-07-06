@@ -1,8 +1,11 @@
 package gexfWebservice;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -10,6 +13,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import com.mysql.jdbc.BufferRow;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
 	
@@ -136,7 +141,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	@Override
-	public String getGraphPath(String type, String eventid, String eventseriesid, String syear, String eyear) throws RemoteException {
+	public String getGraphPath(String type, String eventid, String eventseriesid, String syear, String eyear, Boolean circos) throws RemoteException {
 		GephiGraph ggraph = null;
 		
 		switch(type){
@@ -154,7 +159,58 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			ggraph.calculateGraph();
 			String graph = ggraph.getGexfGraph();
 			String hashname = hashStringSHA256(graph);
+			
+			if(circos){
+				// write the node- and edge list as circos files
+				CircosConfFile circconf = new CircosConfFile();
+				CircosEdgeList circedges = new CircosEdgeList();
+				CircosNodeList circnodes = new CircosNodeList();
+				
+				for(String pub : ggraph.getSetOfPublicationIDs()){
+					circnodes.addNode(pub, ggraph.mapOfPublications.get(pub).getTitle(), 4); // TODO 4 !!!!
+					
+					switch(type){
+					case "cc":
+						for(String edgeTarget : ggraph.mapOfPublications.get(pub).getCitedTogetherWith().keySet()){
+							for(int i = 0; i < ggraph.mapOfPublications.get(pub).getCitedTogetherWith().get(edgeTarget); i++){
+								// if there are 2 cites, create 2 links ...
+								circedges.addEdge(pub, edgeTarget, 2); // TODO 2 !!!!
+							}
+						}
+						break;
+					case "bc":
+						for(String edgeTarget : ggraph.mapOfPublications.get(pub).getBibliograpiccoupling().keySet()){
+							for(int i = 0; i < ggraph.mapOfPublications.get(pub).getBibliograpiccoupling().get(edgeTarget); i++){
+								// if there are 2 cites, create 2 links ...
+								circedges.addEdge(pub, edgeTarget, 2); // TODO 2 !!!!
+							}
+						}
+						break;
+					}
+				}
+				
+				circconf.setEdges(circedges);
+				circconf.setNodes(circnodes);
+				circconf.addParameter("image", "file", hashname+".png");
+				circconf.addParameter("image", "dir", Settings.CIRCOS_GFX_PREFIX);
+				circconf.writeFile(hashname);
+				
+				String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
+				try {
+					Process p = Runtime.getRuntime().exec(runCommand);
+					InputStreamReader instream = new InputStreamReader(p.getInputStream());
+					BufferedReader in = new BufferedReader(instream);
+					String line = null;
+					while((line = in.readLine()) != null){
+						System.out.println(line);
+					}
 
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
 			String filename = Settings.APACHE_PATH + "hash/" + hashname + ".gexf";
 			doesFileExist(filename, graph);
 			ggraph.close();

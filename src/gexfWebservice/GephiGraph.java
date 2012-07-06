@@ -170,6 +170,14 @@ public class GephiGraph {
 		return true;
 	}
 
+	public HashMap<String, Publication> getMapOfPublications() {
+		return mapOfPublications;
+	}
+
+	public Set<String> getSetOfPublicationIDs() {
+		return setOfPublicationIDs;
+	}
+
 	/**
 	 * @return the graph
 	 */
