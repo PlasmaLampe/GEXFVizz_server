@@ -1,14 +1,17 @@
 package gexfWebservice;
 
+import java.util.Collection;
 import java.util.HashSet;
+
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
 
 public class CircosNodeList extends CircosList{
 	private class CircosNode{
 		private String id;
 		private String label;
-		private float size;
+		private Double size;
 		
-		public CircosNode(String id, String label, float size) {
+		public CircosNode(String id, String label, Double size) {
 			this.id = id;
 			this.label = label;
 			this.size = size;
@@ -22,7 +25,7 @@ public class CircosNodeList extends CircosList{
 			return label;
 		}
 		
-		public float getSize() {
+		public Double getSize() {
 			return size;
 		}
 	}
@@ -35,7 +38,7 @@ public class CircosNodeList extends CircosList{
 		maxLabelLenght = 20;
 	}
 	
-	public void addNode(String id, String label, float size){
+	public void addNode(String id, String label, Double size){
 		String cleanlabel = this.createID(label);
 		nodes.add(new CircosNode(id, cleanlabel, size));
 	}

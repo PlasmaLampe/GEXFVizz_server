@@ -3,6 +3,7 @@ package gexfWebservice;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,6 +18,8 @@ import java.security.NoSuchAlgorithmException;
 import com.mysql.jdbc.BufferRow;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
+	private static String lastFileContent = "";
+	private static String lastHashValue = "";
 	
     /**
      * The method creates the specified file with the given content
@@ -32,6 +35,74 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}catch (Exception e){
 			e.printStackTrace();
 		}
+    }
+    
+    /**
+     * This method reads the content of a given file
+     * @param path the path to the file
+     * @return the content of the file as a String
+     */
+    private String getContent(String path){
+    	File tempfile = new File(path);
+    	String contentOfFile ="";
+
+    	try {
+    		BufferedReader input =  new BufferedReader(new FileReader(tempfile));
+    		try {
+    			String line = null; 
+    			while (( line = input.readLine()) != null){
+    				contentOfFile += line;
+    			}
+    		}finally {
+    			input.close();
+    		}
+    	}catch (Exception e){
+    		e.printStackTrace();
+    	}
+
+    	return contentOfFile.toString();
+    }
+    
+    /**
+     * The method hashes the content of the given file and 
+     * returns the SHA256 hash as a return value
+     * @param path of the file that should be checked
+     * @return the SHA256 hash
+     */
+    private String hashCodeSHA256(String path){
+    	String content = getContent(path);
+    	
+    	if(content.equals(lastFileContent)){ // shortcut, maybe we know the output already ;-)
+    		return lastHashValue;
+    	}else{
+    		/* else -> hash the content
+    		 * note: the actual hashing code was taken from
+    		 * http://www.mkyong.com/java/java-sha-hashing-example/
+    		 */
+    		MessageDigest md = null;
+    		try {
+    			md = MessageDigest.getInstance("SHA-256");
+    		} catch (NoSuchAlgorithmException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+    		md.update(content.getBytes());
+
+    		byte byteData[] = md.digest();
+
+    		//convert the byte to hex format method 1
+    		StringBuffer sb = new StringBuffer();
+    		for (int i = 0; i < byteData.length; i++) {
+    			sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
+    		}
+
+    		// save shortcut values
+    		lastFileContent = content;
+    		lastHashValue = sb.toString();
+
+    		// return hash value
+    		return sb.toString();
+    	}
     }
     
     /**
@@ -141,7 +212,41 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	@Override
-	public String getGraphPath(String type, String eventid, String eventseriesid, String syear, String eyear, Boolean circos) throws RemoteException {
+	public String getCircosPath(String filename, String metric) throws RemoteException {
+		String hashname = hashCodeSHA256(filename);
+		
+		CircosConfFile circconf = new CircosConfFile();
+		CircosTuple tuple = new CircosTuple(null,null);
+		Gephi gep = new Gephi();
+		gep.fillCircos(filename, metric, tuple);
+		CircosEdgeList circedges = tuple.getEdges();
+		CircosNodeList circnodes = tuple.getNodes();
+		
+		circconf.setEdges(circedges);
+		circconf.setNodes(circnodes);
+		circconf.addParameter("image", "file", hashname+"_"+metric+".png");
+		circconf.addParameter("image", "dir", Settings.CIRCOS_GFX_PREFIX);
+		circconf.writeFile(hashname);
+		
+		String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
+		try {
+			Process p = Runtime.getRuntime().exec(runCommand);
+			InputStreamReader instream = new InputStreamReader(p.getInputStream());
+			BufferedReader in = new BufferedReader(instream);
+			String line = null;
+			while((line = in.readLine()) != null){
+				System.out.println(line);
+			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "circos/gfx/"+hashname+"_"+metric+".png";
+	}
+
+	@Override
+	public String getGraphPath(String type, String eventid, String eventseriesid, String syear, String eyear) throws RemoteException {
 		GephiGraph ggraph = null;
 		
 		switch(type){
@@ -160,57 +265,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			String graph = ggraph.getGexfGraph();
 			String hashname = hashStringSHA256(graph);
 			
-			if(circos){
-				// write the node- and edge list as circos files
-				CircosConfFile circconf = new CircosConfFile();
-				CircosEdgeList circedges = new CircosEdgeList();
-				CircosNodeList circnodes = new CircosNodeList();
-				
-				for(String pub : ggraph.getSetOfPublicationIDs()){
-					circnodes.addNode(pub, ggraph.mapOfPublications.get(pub).getTitle(), 4); // TODO 4 !!!!
-					
-					switch(type){
-					case "cc":
-						for(String edgeTarget : ggraph.mapOfPublications.get(pub).getCitedTogetherWith().keySet()){
-							for(int i = 0; i < ggraph.mapOfPublications.get(pub).getCitedTogetherWith().get(edgeTarget); i++){
-								// if there are 2 cites, create 2 links ...
-								circedges.addEdge(pub, edgeTarget, 2); // TODO 2 !!!!
-							}
-						}
-						break;
-					case "bc":
-						for(String edgeTarget : ggraph.mapOfPublications.get(pub).getBibliograpiccoupling().keySet()){
-							for(int i = 0; i < ggraph.mapOfPublications.get(pub).getBibliograpiccoupling().get(edgeTarget); i++){
-								// if there are 2 cites, create 2 links ...
-								circedges.addEdge(pub, edgeTarget, 2); // TODO 2 !!!!
-							}
-						}
-						break;
-					}
-				}
-				
-				circconf.setEdges(circedges);
-				circconf.setNodes(circnodes);
-				circconf.addParameter("image", "file", hashname+".png");
-				circconf.addParameter("image", "dir", Settings.CIRCOS_GFX_PREFIX);
-				circconf.writeFile(hashname);
-				
-				String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
-				try {
-					Process p = Runtime.getRuntime().exec(runCommand);
-					InputStreamReader instream = new InputStreamReader(p.getInputStream());
-					BufferedReader in = new BufferedReader(instream);
-					String line = null;
-					while((line = in.readLine()) != null){
-						System.out.println(line);
-					}
-
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			}
 			String filename = Settings.APACHE_PATH + "hash/" + hashname + ".gexf";
 			doesFileExist(filename, graph);
 			ggraph.close();

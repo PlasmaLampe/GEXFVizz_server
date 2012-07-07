@@ -5,7 +5,8 @@ import java.rmi.RemoteException;
 
 public interface ServerInterface extends Remote
 {
-	public String getGraphPath(String type, String eventid, String eventseriesid, String syear, String eyear, Boolean circos) throws RemoteException;
+	public String getGraphPath(String type, String eventid, String eventseriesid, String syear, String eyear) throws RemoteException;
+	public String getCircosPath(String filename, String metric) throws RemoteException;
 	public String getMetrics(String path) throws RemoteException;
 	public String getNodesAndEdges(String path) throws RemoteException;
 	public double getDensity(String path) throws RemoteException;

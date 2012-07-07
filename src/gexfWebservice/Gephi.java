@@ -8,9 +8,11 @@ import org.gephi.data.attributes.api.AttributeColumn;
 import org.gephi.data.attributes.api.AttributeController;
 import org.gephi.data.attributes.api.AttributeModel;
 import org.gephi.graph.api.DirectedGraph;
+import org.gephi.graph.api.Edge;
 import org.gephi.graph.api.GraphController;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.Node;
+import org.gephi.graph.api.NodeIterable;
 import org.gephi.graph.api.UndirectedGraph;
 import org.gephi.io.importer.api.Container;
 import org.gephi.io.importer.api.ImportController;
@@ -35,6 +37,66 @@ public class Gephi{
 		return result;
 	}
 	
+	CircosTuple fillCircos(String path, String metric, CircosTuple fillThis){
+		CircosNodeList mynodes = new CircosNodeList();
+		CircosEdgeList myedges = new CircosEdgeList();
+		
+		//Init a project
+		ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
+		pc.newProject();
+		Workspace workspace = pc.getCurrentWorkspace();
+
+		AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
+		GraphModel graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
+		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
+
+        //Import file       
+        Container container;
+        try {
+            File file = new File(path);
+        	container = importController.importFile(file);
+            container.getLoader();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
+
+		importController.process(container, new DefaultProcessor(), workspace);
+		UndirectedGraph graph = graphModel.getUndirectedGraph();
+		GraphDistance distance = new GraphDistance();
+		distance.setDirected(false);
+		distance.execute(graphModel, attributeModel);
+		
+		Degree deg = new Degree();
+		deg.execute(graphModel, attributeModel);
+		 
+		AttributeColumn metricCol = null;
+		switch(metric){
+		case "cc":
+			metricCol = attributeModel.getNodeTable().getColumn(GraphDistance.CLOSENESS);
+			break;
+		case "dc":
+			metricCol = attributeModel.getNodeTable().getColumn(Degree.DEGREE);
+			break;
+		case "bc":
+			metricCol = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);;
+			break;
+		}
+		
+		for(Node node : graph.getNodes()){
+			Double centrality = (Double)node.getNodeData().getAttributes().getValue(metricCol.getIndex());
+			mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), centrality * 100);
+		}
+		
+		for(Edge edge : graph.getEdges()){
+			myedges.addEdge(edge.getEdgeData().getSource().getId(), edge.getEdgeData().getTarget().getId(), 2);
+		}
+		
+		fillThis.setEdges(myedges);
+		fillThis.setNodes(mynodes);
+		
+		return fillThis;
+	}
 	/**
 	 * returns the #nodes of the given file
 	 * @param path The file which should be checked
