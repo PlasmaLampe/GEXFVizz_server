@@ -48,6 +48,17 @@ public class CircosEdgeList extends CircosList{
 	
 	private HashSet<CircosEdge> edges;
 	
+	/*
+	public void cleanEdgeList(CircosNodeList nodes){
+		for(CircosEdge check : edges){
+			if(nodes.containsNode(check.from) && nodes.containsNode(check.to)){
+				// this is fine, source and target are valid nodes
+			}else{
+				edges.remove(check);
+			}
+		}
+	}*/
+	
 	public CircosEdgeList() {
 		edges = new HashSet<CircosEdge>();
 	}

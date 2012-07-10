@@ -1,12 +1,9 @@
 package gexfWebservice;
 
-import java.util.Collection;
 import java.util.HashSet;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
-
 public class CircosNodeList extends CircosList{
-	private class CircosNode{
+	private class CircosNode implements Comparable<CircosNode>{
 		private String id;
 		private String label;
 		private Double size;
@@ -28,6 +25,10 @@ public class CircosNodeList extends CircosList{
 		public Double getSize() {
 			return size;
 		}
+
+		public int compareTo(CircosNode o) {
+			return (int)((o.getSize() * 1000) - (this.getSize() * 1000));
+		}
 	}
 	
 	private HashSet<CircosNode> nodes;
@@ -42,7 +43,27 @@ public class CircosNodeList extends CircosList{
 		String cleanlabel = this.createID(label);
 		nodes.add(new CircosNode(id, cleanlabel, size));
 	}
-
+	
+	/*public void cutAfterRank(int rank){
+		TreeSet<CircosNode> tempnodes = new TreeSet<CircosNode>();
+		
+		if(rank < nodes.size()){
+			for(int i=0; i < rank; i++){
+				tempnodes.add(nodes.pollLast());
+			}
+			
+			nodes = tempnodes;
+		}	
+	}
+	
+	public boolean containsNode(String id){
+		for(CircosNode check : nodes){
+			if(check.id == id)
+				return true;
+		}
+		return false;
+	}*/
+	
 	@Override
 	public void writeFile(String hashname) {
 		for(CircosNode node : nodes){

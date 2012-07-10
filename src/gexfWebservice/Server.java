@@ -15,8 +15,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import com.mysql.jdbc.BufferRow;
-
 public class Server extends UnicastRemoteObject implements ServerInterface {
 	private static String lastFileContent = "";
 	private static String lastHashValue = "";
@@ -212,19 +210,19 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	@Override
-	public String getCircosPath(String filename, String metric) throws RemoteException {
+	public String getCircosPath(String filename, String metric, int rank) throws RemoteException {
 		String hashname = hashCodeSHA256(filename);
 		
 		CircosConfFile circconf = new CircosConfFile();
 		CircosTuple tuple = new CircosTuple(null,null);
 		Gephi gep = new Gephi();
-		gep.fillCircos(filename, metric, tuple);
+		gep.fillCircos(filename, metric, rank, tuple);
 		CircosEdgeList circedges = tuple.getEdges();
 		CircosNodeList circnodes = tuple.getNodes();
 		
 		circconf.setEdges(circedges);
 		circconf.setNodes(circnodes);
-		circconf.addParameter("image", "file", hashname+"_"+metric+".png");
+		circconf.addParameter("image", "file", hashname+"_"+metric+"_"+rank+".png");
 		circconf.addParameter("image", "dir", Settings.CIRCOS_GFX_PREFIX);
 		circconf.writeFile(hashname);
 		
@@ -242,7 +240,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return "circos/gfx/"+hashname+"_"+metric+".png";
+		return "circos/gfx/"+hashname+"_"+metric+"_"+rank+".png";
 	}
 
 	@Override

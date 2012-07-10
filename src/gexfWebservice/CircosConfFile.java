@@ -69,6 +69,7 @@ public class CircosConfFile {
 		linkparameter.put("bezier_radius", "0.1r"); // default value
 		linkparameter.put("color", "black_a4"); // default value
 		linkparameter.put("thickness", "3"); // default value
+		linkparameter.put("ribbon", "yes"); // default value
 		
 		imageparameter.put("dir","."); // default value
 		imageparameter.put("file","circos.png"); // default value

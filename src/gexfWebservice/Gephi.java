@@ -12,7 +12,6 @@ import org.gephi.graph.api.Edge;
 import org.gephi.graph.api.GraphController;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.Node;
-import org.gephi.graph.api.NodeIterable;
 import org.gephi.graph.api.UndirectedGraph;
 import org.gephi.io.importer.api.Container;
 import org.gephi.io.importer.api.ImportController;
@@ -37,7 +36,7 @@ public class Gephi{
 		return result;
 	}
 	
-	CircosTuple fillCircos(String path, String metric, CircosTuple fillThis){
+	CircosTuple fillCircos(String path, String metric, int rank, CircosTuple fillThis){
 		CircosNodeList mynodes = new CircosNodeList();
 		CircosEdgeList myedges = new CircosEdgeList();
 		
@@ -85,12 +84,18 @@ public class Gephi{
 		
 		for(Node node : graph.getNodes()){
 			Double centrality = (Double)node.getNodeData().getAttributes().getValue(metricCol.getIndex());
-			mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), centrality * 100);
+			if(centrality != 0)
+				mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), centrality * 100);
+			else
+				mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), 1.0d);
 		}
 		
 		for(Edge edge : graph.getEdges()){
-			myedges.addEdge(edge.getEdgeData().getSource().getId(), edge.getEdgeData().getTarget().getId(), 2);
+			myedges.addEdge(edge.getEdgeData().getSource().getId(), edge.getEdgeData().getTarget().getId(), edge.getWeight());
 		}
+		
+		//mynodes.cutAfterRank(rank);
+		//myedges.cleanEdgeList(mynodes);
 		
 		fillThis.setEdges(myedges);
 		fillThis.setNodes(mynodes);
