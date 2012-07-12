@@ -94,8 +94,8 @@ public class Gephi{
 			myedges.addEdge(edge.getEdgeData().getSource().getId(), edge.getEdgeData().getTarget().getId(), edge.getWeight());
 		}
 		
-		//mynodes.cutAfterRank(rank);
-		//myedges.cleanEdgeList(mynodes);
+		mynodes.cutAfterRank(rank);
+		myedges.cleanEdgeList(mynodes);
 		
 		fillThis.setEdges(myedges);
 		fillThis.setNodes(mynodes);

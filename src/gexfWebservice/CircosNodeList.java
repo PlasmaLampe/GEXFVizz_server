@@ -1,6 +1,7 @@
 package gexfWebservice;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class CircosNodeList extends CircosList{
 	private class CircosNode implements Comparable<CircosNode>{
@@ -31,11 +32,11 @@ public class CircosNodeList extends CircosList{
 		}
 	}
 	
-	private HashSet<CircosNode> nodes;
+	private ArrayList<CircosNode> nodes;
 	private int maxLabelLenght;
 	
 	public CircosNodeList() {
-		nodes = new HashSet<CircosNode>();
+		nodes = new ArrayList<CircosNode>();
 		maxLabelLenght = 20;
 	}
 	
@@ -44,12 +45,13 @@ public class CircosNodeList extends CircosList{
 		nodes.add(new CircosNode(id, cleanlabel, size));
 	}
 	
-	/*public void cutAfterRank(int rank){
-		TreeSet<CircosNode> tempnodes = new TreeSet<CircosNode>();
+	public void cutAfterRank(int rank){
+		ArrayList<CircosNode> tempnodes = new ArrayList<CircosNode>();
+		Collections.sort(nodes);
 		
 		if(rank < nodes.size()){
 			for(int i=0; i < rank; i++){
-				tempnodes.add(nodes.pollLast());
+				tempnodes.add(nodes.get(i));
 			}
 			
 			nodes = tempnodes;
@@ -62,7 +64,7 @@ public class CircosNodeList extends CircosList{
 				return true;
 		}
 		return false;
-	}*/
+	}
 	
 	@Override
 	public void writeFile(String hashname) {

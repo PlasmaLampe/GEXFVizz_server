@@ -1,6 +1,6 @@
 package gexfWebservice;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 
 public class CircosEdgeList extends CircosList{
 	private class CircosEdge{
@@ -46,21 +46,25 @@ public class CircosEdgeList extends CircosList{
 		}
 	}
 	
-	private HashSet<CircosEdge> edges;
+	private ArrayList<CircosEdge> edges;
 	
-	/*
 	public void cleanEdgeList(CircosNodeList nodes){
+		ArrayList<CircosEdge> cleanedList = new ArrayList<CircosEdge>();
+		
 		for(CircosEdge check : edges){
 			if(nodes.containsNode(check.from) && nodes.containsNode(check.to)){
 				// this is fine, source and target are valid nodes
+				cleanedList.add(check);
 			}else{
-				edges.remove(check);
+				// do not use this one
 			}
 		}
-	}*/
+		
+		edges = cleanedList;
+	}
 	
 	public CircosEdgeList() {
-		edges = new HashSet<CircosEdge>();
+		edges = new ArrayList<CircosEdge>();
 	}
 	
 	public void addEdge(String from, String to, float pos){

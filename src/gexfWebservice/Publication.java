@@ -10,12 +10,12 @@ public class Publication{
 	private HashMap<String, Integer> bibliograpiccoupling;
 	private String title;
 	private ArrayList<String> getCitedBy; // publication that cite this one
-	
+	private int publishedInYear;
 	/**
 	 * @param id
 	 * @param cites
 	 */
-	public Publication(String id, String title, ArrayList<String> cites, ArrayList<String> getCitedBy) {
+	public Publication(String id, int publishedInYear, String title, ArrayList<String> cites, ArrayList<String> getCitedBy) {
 		super();
 		this.id = id;
 		this.cites = cites;
@@ -23,6 +23,8 @@ public class Publication{
 		this.citedTogetherWith = new HashMap<String, Integer>();
 		this.bibliograpiccoupling = new HashMap<String, Integer>();
 		this.getCitedBy = getCitedBy;
+		this.publishedInYear = publishedInYear;
+		
 	}
 	
 	public void addPaperThatHasBeenCitedWithThisOne(String paper){
@@ -35,6 +37,13 @@ public class Publication{
 		}
 	}
 	
+	/**
+	 * @return the year in which the publication has been published
+	 */
+	public int getPublishedInYear() {
+		return publishedInYear;
+	}
+
 	public void addBibliographicCouplingTo(String paper, int value){
 		bibliograpiccoupling.put(paper, value);
 	}

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeMap;
 
 
 public class GephiGraph {
@@ -155,9 +156,20 @@ public class GephiGraph {
 				labelrs.close();
 				labelstmt.close();
 				
+				// get the publishing year of this publication
+				String year = "";
+				Statement yearstmt = con.createStatement();
+				ResultSet yearrs = yearstmt.executeQuery( "SELECT ev.text, ev.id FROM event ev WHERE EXISTS ( SELECT * FROM pub_evt pevt WHERE pevt.publication_id=\""+ idOfPublication +"\" && pevt.event_id=ev.id )");
+				while( yearrs.next() ){
+					year = yearrs.getString(1);
+				}
+				int cleanyear = Integer.parseInt(year.replaceAll("[a-zA-Z]", "").trim());
+				yearrs.close();
+				yearstmt.close();
+				
 				// store all of it
 				setOfPublicationIDs.add(idOfPublication);
-				mapOfPublications.put(idOfPublication, new Publication(idOfPublication, title, cites, getCitedBy));
+				mapOfPublications.put(idOfPublication, new Publication(idOfPublication, cleanyear, title, cites, getCitedBy));
 			}
 			rs.close() ;
 			// Close the result set, statement and the connection
@@ -286,7 +298,7 @@ class CoCitationGraph extends GephiGraph{
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
 			
 			gexfGraph += "\t\t\t<node id=\""+ mapOfPublications.get(publication).getId() +"\" " +
-					"label=\""+ clearedlabel +"\"></node>\n";
+					"label=\""+ clearedlabel +"\" start=\""+ mapOfPublications.get(publication).getPublishedInYear() +"\"></node>\n";
 		}		
 		
 		// write edges
@@ -309,10 +321,27 @@ class CoCitationGraph extends GephiGraph{
 }
 
 class BibliographicCouplingGraph extends GephiGraph{
+	private TreeMap<Integer, ArrayList<String>> bib_coup_count; // this car is needed for the tabular visulization of the edges
 	
 	public BibliographicCouplingGraph(String eventid, String eventseriesid, String syear,
 			String eyear) {
 		super(eventid, eventseriesid, syear, eyear);
+		
+		bib_coup_count = new TreeMap<Integer, ArrayList<String>>();
+	}
+
+	public void addEntryToBibCoup(String fromName, String toName, int value){
+		if(!bib_coup_count.containsKey(value)){
+			bib_coup_count.put(value, new ArrayList<String>());
+		}
+		bib_coup_count.get(value).add(fromName+" to "+toName);
+	}
+	
+	/**
+	 * @return the bib_coup_count
+	 */
+	public TreeMap<Integer, ArrayList<String>> getBib_coup_count() {
+		return bib_coup_count;
 	}
 
 	@Override
@@ -332,6 +361,7 @@ class BibliographicCouplingGraph extends GephiGraph{
 					int value = Integer.parseInt(rsid.getString(2));
 					Publication checkPub = mapOfPublications.get(pubid);
 					if(checkPub != null){
+						this.addEntryToBibCoup(mapOfPublications.get(pub).getTitle(), checkPub.getTitle(), value); // store sorted edges
 						mapOfPublications.get(pub).addBibliographicCouplingTo(pubid, value);
 					}
 				}
@@ -341,22 +371,6 @@ class BibliographicCouplingGraph extends GephiGraph{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
-			//ArrayList<String> getCitedBy = mapOfPublications.get(pub).getGetCitedBy();
-			
-			/*
-			for(String paperA : getCitedBy){
-				for(String paperB : getCitedBy){
-					if(!paperA.equals(paperB)){
-						Publication tpub = mapOfPublications.get(paperA);
-						if(tpub != null){
-							tpub.addBibliographicCouplingTo(paperB);
-						}else{
-							System.out.println("Error: one publication was not found on this conference");
-						}
-					}
-				}
-			}*/
 		}
 		
 		// Create GEXF file
@@ -383,7 +397,7 @@ class BibliographicCouplingGraph extends GephiGraph{
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
 			
 			gexfGraph += "\t\t\t<node id=\""+ mapOfPublications.get(publication).getId() +"\" " +
-					"label=\""+ clearedlabel +"\"></node>\n";
+					"label=\""+ clearedlabel +"\" start=\""+ mapOfPublications.get(publication).getPublishedInYear() +"\"></node>\n";
 		}		
 		
 		// write edges

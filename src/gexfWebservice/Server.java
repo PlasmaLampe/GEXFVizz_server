@@ -14,6 +14,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
 	private static String lastFileContent = "";
@@ -195,6 +198,43 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	@Override
+	public String getBCEdges(String eventid,String eventseriesid,String syear,String eyear, int rank) throws RemoteException {
+		BibliographicCouplingGraph ggraph = new BibliographicCouplingGraph(eventid, eventseriesid, syear, eyear);
+		
+		ggraph.connectToDB(Settings.DB_CONNECTOR, Settings.DB_USER, Settings.DB_PASSWORD);
+		boolean init_finished = ggraph.init();
+		if( init_finished ){
+			ggraph.calculateGraph();
+			TreeMap<Integer, ArrayList <String>> bib_coup_count = ggraph.getBib_coup_count();
+			ggraph.close();
+			
+			String output = "<table class=\"zebra-striped\">\n\t<tr><th>name</th><th>bib value</th></tr>\n";
+			
+			int count = 0;
+			for(int i = 0; i < rank; i++){
+				Entry<Integer,ArrayList <String>> temp = bib_coup_count.pollLastEntry();
+				
+				if(temp != null){
+					for(String entry : temp.getValue()){ // all entries for this value
+						output += "\t<tr><td>"+ entry +"</td>" +
+								"<td>"+temp.getKey()+"</td></tr>\n";
+						
+						if(count >= rank){
+							break;
+						}
+						count++;
+					}
+				}
+			}
+			output += "</table>";
+			
+			return output;
+		}else{
+			return "ERROR";
+		}
+	}
+	
+	@Override
 	public String getNodesAndEdges(String path) throws RemoteException {
 		Gephi gephi = new Gephi();
 		int nodes = gephi.getNodes(path);
@@ -227,6 +267,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		circconf.writeFile(hashname);
 		
 		String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
+		String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+metric+"_"+rank+".png" +
+				" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+metric+"_"+rank+"_small.png";
 		try {
 			Process p = Runtime.getRuntime().exec(runCommand);
 			InputStreamReader instream = new InputStreamReader(p.getInputStream());
@@ -235,7 +277,15 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			while((line = in.readLine()) != null){
 				System.out.println(line);
 			}
-
+			
+			Process p2 = Runtime.getRuntime().exec(resizeCommand);
+			InputStreamReader instream2 = new InputStreamReader(p2.getInputStream());
+			BufferedReader in2 = new BufferedReader(instream2);
+			line = null;
+			while((line = in2.readLine()) != null){
+				System.out.println(line);
+			}
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
