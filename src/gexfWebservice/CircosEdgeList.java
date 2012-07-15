@@ -63,6 +63,34 @@ public class CircosEdgeList extends CircosList{
 		edges = cleanedList;
 	}
 	
+	public void cleanEdgeListToOnlyEdgesFromOneNode(String nodeID){
+		ArrayList<CircosEdge> cleanedList = new ArrayList<CircosEdge>();
+		
+		for(CircosEdge check : edges){
+			if(check.from.equals(nodeID) || check.to.equals(nodeID)){
+				// this is fine, source and target are valid nodes
+				cleanedList.add(check);
+			}else{
+				// do not use this one
+			}
+		}
+		
+		edges = cleanedList; 
+	}
+	
+	public boolean containsNodeAsSourceOrTarget(String NodeID){
+		boolean containsNode = false;
+		
+		for(CircosEdge localedge : edges){
+			if(localedge.from == NodeID || localedge.to == NodeID){
+				containsNode = true;
+				break;
+			}
+		}
+		
+		return containsNode;
+	}
+	
 	public CircosEdgeList() {
 		edges = new ArrayList<CircosEdge>();
 	}

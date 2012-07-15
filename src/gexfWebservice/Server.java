@@ -167,6 +167,52 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		System.out.println("Server created...");
 	}
 
+	@Override
+	public String getLocalCircos(String path, String item, String sna) throws RemoteException {
+		String hashname = hashCodeSHA256(path);
+		
+		CircosConfFile circconf = new CircosConfFile();
+		CircosTuple tuple = new CircosTuple(null,null);
+		Gephi gep = new Gephi();
+		gep.fillCircos(path, sna, 1000, tuple); // TODO 1000 *doof* eher so max = -1 oder so...
+		
+		// clean nodes and edges
+		tuple.getEdges().cleanEdgeListToOnlyEdgesFromOneNode(item);
+		tuple.getNodes().cleanNodeListToEdges(tuple.getEdges());
+		
+		circconf.setNodes(tuple.getNodes());
+		circconf.setEdges(tuple.getEdges());
+		circconf.addParameter("image", "file", hashname+"_"+sna+"_"+item+".png");
+		circconf.addParameter("image", "dir", Settings.CIRCOS_GFX_PREFIX);
+		circconf.writeFile(hashname);
+		
+		String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
+		String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+".png" +
+				" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+"_small.png";
+		try {
+			Process p = Runtime.getRuntime().exec(runCommand);
+			InputStreamReader instream = new InputStreamReader(p.getInputStream());
+			BufferedReader in = new BufferedReader(instream);
+			String line = null;
+			while((line = in.readLine()) != null){
+				System.out.println(line);
+			}
+			
+			Process p2 = Runtime.getRuntime().exec(resizeCommand);
+			InputStreamReader instream2 = new InputStreamReader(p2.getInputStream());
+			BufferedReader in2 = new BufferedReader(instream2);
+			line = null;
+			while((line = in2.readLine()) != null){
+				System.out.println(line);
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "circos/gfx/"+hashname+"_"+sna+"_"+item+".png";
+	}
+	
 	public static void main(String [] args){	
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
@@ -190,7 +236,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
 	@Override
 	public String getMetrics(String path) throws RemoteException {
-		// new stuff
 		Gephi gephi = new Gephi();
 		String result = gephi.getMetrics(path);
 		

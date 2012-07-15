@@ -3,35 +3,35 @@ package gexfWebservice;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class CircosNodeList extends CircosList{
-	private class CircosNode implements Comparable<CircosNode>{
-		private String id;
-		private String label;
-		private Double size;
-		
-		public CircosNode(String id, String label, Double size) {
-			this.id = id;
-			this.label = label;
-			this.size = size;
-		}
+class CircosNode implements Comparable<CircosNode>{
+	private String id;
+	private String label;
+	private Double size;
+	
+	public CircosNode(String id, String label, Double size) {
+		this.id = id;
+		this.label = label;
+		this.size = size;
+	}
 
-		public String getID() {
-			return id;
-		}
+	public String getID() {
+		return id;
+	}
 
-		public String getLabel() {
-			return label;
-		}
-		
-		public Double getSize() {
-			return size;
-		}
-
-		public int compareTo(CircosNode o) {
-			return (int)((o.getSize() * 1000) - (this.getSize() * 1000));
-		}
+	public String getLabel() {
+		return label;
 	}
 	
+	public Double getSize() {
+		return size;
+	}
+
+	public int compareTo(CircosNode o) {
+		return (int)((o.getSize() * 1000) - (this.getSize() * 1000));
+	}
+}
+
+public class CircosNodeList extends CircosList{
 	private ArrayList<CircosNode> nodes;
 	private int maxLabelLenght;
 	
@@ -43,6 +43,19 @@ public class CircosNodeList extends CircosList{
 	public void addNode(String id, String label, Double size){
 		String cleanlabel = this.createID(label);
 		nodes.add(new CircosNode(id, cleanlabel, size));
+	}
+	
+	public void cleanNodeListToEdges(CircosEdgeList edges){
+		ArrayList<CircosNode> tempnodes = new ArrayList<CircosNode>();
+		Collections.sort(nodes);
+		
+		for(int i = 0; i < nodes.size(); i++){
+			if(edges.containsNodeAsSourceOrTarget(nodes.get(i).getID())){
+				tempnodes.add(nodes.get(i));
+			}
+		}
+			
+		nodes = tempnodes;
 	}
 	
 	public void cutAfterRank(int rank){
@@ -60,7 +73,7 @@ public class CircosNodeList extends CircosList{
 	
 	public boolean containsNode(String id){
 		for(CircosNode check : nodes){
-			if(check.id == id)
+			if(check.getID() == id)
 				return true;
 		}
 		return false;

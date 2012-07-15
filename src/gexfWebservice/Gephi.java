@@ -83,7 +83,8 @@ public class Gephi{
 		}
 		
 		for(Node node : graph.getNodes()){
-			Double centrality = (Double)node.getNodeData().getAttributes().getValue(metricCol.getIndex());
+			String stringcentrality = "" + node.getNodeData().getAttributes().getValue(metricCol.getIndex());
+			Double centrality = Double.parseDouble(stringcentrality);
 			if(centrality != 0)
 				mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), centrality * 100);
 			else
@@ -283,7 +284,7 @@ public class Gephi{
 		Collections.sort(bc,new NodeComparator());
 		Collections.sort(dc,new NodeComparator());
 		
-		String output = "<top>\n\t<closenessCentrality>\n";
+		String output = "<top>\n\t<filename>"+filename+"</filename>\n\t<closenessCentrality>\n";
 		for(int i=0; i < cc.size(); i++){
 			String clearlabel = graph.getNode(cc.get(i).getSystemID()).getNodeData().getLabel();
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
