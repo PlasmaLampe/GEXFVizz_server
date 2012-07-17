@@ -31,6 +31,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	
     /**
      * The method creates the specified file with the given content
+     * 
      * @param path to the file, that is going to be created
      * @param content the content of the file
      */
@@ -47,6 +48,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     
     /**
      * This method reads the content of a given file
+     * 
      * @param path the path to the file
      * @return the content of the file as a String
      */
@@ -74,6 +76,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     /**
      * The method hashes the content of the given file and 
      * returns the SHA256 hash as a return value
+     * 
      * @param path of the file that should be checked
      * @return the SHA256 hash
      */
@@ -115,6 +118,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     /**
      * The method hashes the given string 
      * returns the SHA256 hash as a return value
+     * 
      * @param string that is going to be hashed
      * @return the SHA256 hash
      */
@@ -161,7 +165,15 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     	}
     }
 
-	@Override
+	/**
+	 * The method returns the path to the circos image, which is a local represantation of 'item' in
+	 * the graph that is specified in 'path' 
+	 * 
+	 * @param path the path to the gexf file that should be used
+	 * @param item the item which is the central part of this circos visualization
+	 * @param sna the used metric for the circos ideogram (eg. "cc","dc","bc")
+	 * @return a string that contains the path to the image 
+	 */
 	public String getLocalCircos(String path, String item, String sna) throws RemoteException {
 		String hashname = hashCodeSHA256(path);
 		
@@ -227,7 +239,12 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}
 	}
 
-	@Override
+	/**
+	 * This method returns an XML String which contains all sna metrics of the given gexf file
+	 * 
+	 * @param path The path to the gexf file, which should be used to calculate the metrics
+	 * @return a xml string that contains all metrics
+	 */
 	public String getMetrics(String path) throws RemoteException {
 		Gephi gephi = new Gephi();
 		String result = gephi.getMetrics(path);
@@ -235,7 +252,17 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		return result;
 	}
 
-	@Override
+	/**
+	 * This method returns the top 'rank' bibliographic coupling edges of the graph, that is specified by 
+	 * the given parameters
+	 * 
+	 * @param eventid of graph that should be used to generate the edges
+	 * @param eventseriesid of graph that should be used to generate the edges
+	 * @param syear the start year
+	 * @param eyear the end year
+	 * @param rank the number of edges that should be generated
+	 * @return a string that contains a html table with the edges
+	 */
 	public String getBCEdges(String eventid,String eventseriesid,String syear,String eyear, int rank) throws RemoteException {
 		BibliographicCouplingGraph ggraph = new BibliographicCouplingGraph(eventid, eventseriesid, syear, eyear);
 		
@@ -274,7 +301,13 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}
 	}
 	
-	@Override
+	/**
+	 * The method returns a string of the format "nodes#edges", that contains the number of nodes and the number of edges
+	 * of the graph, that is specified in the gexf file, which can be found at 'path'
+	 * 
+	 * @param path to the gexf file
+	 * @return a string that contains the number of nodes and edges of the graph
+	 */
 	public String getNodesAndEdges(String path) throws RemoteException {
 		Gephi gephi = new Gephi();
 		int nodes = gephi.getNodes(path);
@@ -283,13 +316,29 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		return nodes+"#"+edges;
 	}
 
-	@Override
+	/**
+	 * The method returns a double value which describes the density
+	 * of the graph, that is specified in the gexf file, which can be found at 'path'
+	 * 
+	 * @param path to the gexf file
+	 * @return a double value that contains the density of the graph
+	 */
 	public double getDensity(String path) throws RemoteException {
 		Gephi gephi = new Gephi();
 		return gephi.getDensity(path);
 	}
 
-	@Override
+	/**
+	 * The method returns the path to the circos image, which is representation of
+	 * the graph that is specified in 'filename'. In addition to that the ideogram size is filled
+	 * with the metric, that is specified in the parameter 'metric'. Furthermore, the 
+	 * parameter rank specifies the number of items that should be used in the circos graph
+	 * 
+	 * @param filename the path to the gexf file that should be used
+	 * @param metric the used metric for the circos ideogram (eg. "cc","dc","bc")
+	 * @param rank specifies the number of items that should be used
+	 * @return a string that contains the path to the image 
+	 */
 	public String getCircosPath(String filename, String metric, int rank) throws RemoteException {
 		String hashname = hashCodeSHA256(filename);
 		
@@ -332,7 +381,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		return "circos/gfx/"+hashname+"_"+metric+"_"+rank+".png";
 	}
 
-	@Override
+	/**
+	 * This method returns a path to a gexf file, that has been generated according to the given parameters
+	 * 
+	 * @param type the type of the graph that should be generated ("cc" for co-citation / "bc" for bibliographic coupling)
+	 * @param eventid of graph that should be used to generate the edges
+	 * @param eventseriesid of graph that should be used to generate the edges
+	 * @param syear the start year
+	 * @param eyear the end year
+	 * @return a string that contains the path to the gexf file
+	 */
 	public String getGraphPath(String type, String eventid, String eventseriesid, String syear, String eyear) throws RemoteException {
 		GephiGraph ggraph = null;
 		
@@ -359,7 +417,5 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}else{
 			return Settings.DOMAIN_PREFIX + "ERROR";
 		}
-		
 	}
-
 }
