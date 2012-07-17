@@ -101,6 +101,9 @@ public class Gephi{
 		fillThis.setEdges(myedges);
 		fillThis.setNodes(mynodes);
 		
+		pc.closeCurrentWorkspace();
+		pc.closeCurrentProject();
+		
 		return fillThis;
 	}
 	/**
@@ -118,20 +121,36 @@ public class Gephi{
 		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
 
         //Import file       
-        Container container;
+        Container container = importFileToContainer(path, importController);
+        if(container != null){
+			importController.process(container, new DefaultProcessor(), workspace);
+			DirectedGraph graph = graphModel.getDirectedGraph();
+			
+			pc.closeCurrentWorkspace();
+			pc.closeCurrentProject();
+			
+			return graph.getNodeCount();
+        }else{
+        	return -1;
+        }
+	}
+
+	/**
+	 * @param path
+	 * @param importController
+	 * @return
+	 */
+	private Container importFileToContainer(String path, ImportController importController) {
+		Container container;
         try {
             File file = new File(path);
         	container = importController.importFile(file);
             container.getLoader();
         } catch (Exception ex) {
             ex.printStackTrace();
-            return -1;
+            return null;
         }
-
-		importController.process(container, new DefaultProcessor(), workspace);
-		DirectedGraph graph = graphModel.getDirectedGraph();
-		
-		return graph.getNodeCount();
+		return container;
 	}
 	
 	/**
@@ -148,21 +167,18 @@ public class Gephi{
 		GraphModel graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
 		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
 
-        //Import file       
-        Container container;
-        try {
-            File file = new File(path);
-        	container = importController.importFile(file);
-            container.getLoader();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return -1;
+        Container container = importFileToContainer(path, importController);
+        if(container != null){
+			importController.process(container, new DefaultProcessor(), workspace);
+			DirectedGraph graph = graphModel.getDirectedGraph();
+			
+			pc.closeCurrentWorkspace();
+			pc.closeCurrentProject();
+			
+			return graph.getEdgeCount();
+        }else{
+        	return -1;
         }
-
-		importController.process(container, new DefaultProcessor(), workspace);
-		DirectedGraph graph = graphModel.getDirectedGraph();
-		
-		return graph.getEdgeCount();
 	}
 	
 	/**
@@ -180,25 +196,23 @@ public class Gephi{
 		GraphModel graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
 		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
 
-        //Import file       
-        Container container;
-        try {
-            File file = new File(path);
-        	container = importController.importFile(file);
-            container.getLoader();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return -1;
+        Container container = importFileToContainer(path, importController);
+		if(container != null){
+			//Append imported data to GraphAPI
+			importController.process(container, new DefaultProcessor(), workspace);
+			
+			GraphDensity dens = new GraphDensity();
+			dens.setDirected(false);
+			dens.execute(graphModel, attributeModel);	
+			
+			pc.closeCurrentWorkspace();
+			pc.closeCurrentProject();
+			
+			return dens.getDensity();
+        }else{
+        	return -1.0;
         }
 		
-		//Append imported data to GraphAPI
-		importController.process(container, new DefaultProcessor(), workspace);
-
-		GraphDensity dens = new GraphDensity();
-		dens.setDirected(false);
-		dens.execute(graphModel, attributeModel);	
-		
-		return dens.getDensity();
 	}
 	
 	/**
@@ -218,108 +232,96 @@ public class Gephi{
 		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
 
         //Import file       
-        Container container;
-        try {
-        	System.out.println("opening: "+filename);
-            File file = new File(filename);
-        	container = importController.importFile(file);
-            container.getLoader();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return "ERROR";
+		Container container = importFileToContainer(filename, importController);
+		if(container != null){
+			//Append imported data to GraphAPI
+			importController.process(container, new DefaultProcessor(), workspace);
+	
+			UndirectedGraph graph = graphModel.getUndirectedGraph();
+			GraphDistance distance = new GraphDistance();
+			distance.setDirected(false);
+			distance.execute(graphModel, attributeModel);
+			
+			Degree deg = new Degree();
+			deg.execute(graphModel, attributeModel);
+			 
+			AttributeColumn betweennessColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
+			AttributeColumn closenessColumn = attributeModel.getNodeTable().getColumn(GraphDistance.CLOSENESS);
+			AttributeColumn degreeColumn = attributeModel.getNodeTable().getColumn(Degree.DEGREE);
+			
+			ArrayList<MyNode> cc = new ArrayList<MyNode>();
+			ArrayList<MyNode> bc = new ArrayList<MyNode>();
+			ArrayList<MyNode> dc = new ArrayList<MyNode>();
+			
+			int cnodes = graph.getNodeCount();
+			
+			//Iterate over values
+			for (Node n : graph.getNodes()) {
+			   Double centrality = (Double)n.getNodeData().getAttributes().getValue(closenessColumn.getIndex());
+			   
+			   double standardizedCloseness = 0;
+				// use the reciprocal of the value calculated by Gephi
+				if(centrality != 0.0)
+					standardizedCloseness = roundTwoD(1 / centrality);
+				
+			   cc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedCloseness, centrality));
+			}
+			
+			//Iterate over values
+			for (Node n : graph.getNodes()) {
+			   Double centrality = (Double)n.getNodeData().getAttributes().getValue(betweennessColumn.getIndex());
+			   
+			   double standardizedBetweenness = roundTwoD(centrality / (((cnodes - 1) * (cnodes - 2))/2));
+				
+			   bc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedBetweenness, centrality));
+			}
+			
+			//Iterate over values
+			for (Node n : graph.getNodes()) {
+			   int centrality = (Integer)n.getNodeData().getAttributes().getValue(degreeColumn.getIndex());
+			   
+			   double standardizedDegree = roundTwoD((double) ((double) centrality / (double) (cnodes -1)));
+			   
+			   dc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedDegree, centrality));
+			}
+			
+			Collections.sort(cc,new NodeComparator());
+			Collections.sort(bc,new NodeComparator());
+			Collections.sort(dc,new NodeComparator());
+			
+			String output = "<top>\n\t<filename>"+filename+"</filename>\n\t<closenessCentrality>\n";
+			output += printToXML(graph, cc);
+			output +="\t</closenessCentrality>\n";
+			
+			output += "\t<betweennessCentrality>\n";
+			output += printToXML(graph, bc);
+			output +="\t</betweennessCentrality>\n";
+			
+			output += "\t<degreeCentrality>\n";
+			output += printToXML(graph, dc);
+			output +="\t</degreeCentrality>\n</top>";
+			
+			pc.closeCurrentWorkspace();
+			pc.closeCurrentProject();
+			
+			return output;
+        }else{
+        	return "ERROR";
         }
-		
-		//Append imported data to GraphAPI
-		importController.process(container, new DefaultProcessor(), workspace);
+	}
 
-		UndirectedGraph graph = graphModel.getUndirectedGraph();
-		GraphDistance distance = new GraphDistance();
-		distance.setDirected(false);
-		distance.execute(graphModel, attributeModel);
-		
-		Degree deg = new Degree();
-		deg.execute(graphModel, attributeModel);
-		 
-		AttributeColumn betweennessColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
-		AttributeColumn closenessColumn = attributeModel.getNodeTable().getColumn(GraphDistance.CLOSENESS);
-		AttributeColumn degreeColumn = attributeModel.getNodeTable().getColumn(Degree.DEGREE);
-		
-		ArrayList<MyNode> cc = new ArrayList<MyNode>();
-		ArrayList<MyNode> bc = new ArrayList<MyNode>();
-		ArrayList<MyNode> dc = new ArrayList<MyNode>();
-		
-		int cnodes = graph.getNodeCount();
-		
-		//Iterate over values
-		for (Node n : graph.getNodes()) {
-		   Double centrality = (Double)n.getNodeData().getAttributes().getValue(closenessColumn.getIndex());
-		   
-		   double standardizedCloseness = 0;
-			// use the reciprocal of the value calculated by Gephi
-			if(centrality != 0.0)
-				standardizedCloseness = roundTwoD(1 / centrality);
-			
-		   cc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedCloseness, centrality));
-		}
-		
-		//Iterate over values
-		for (Node n : graph.getNodes()) {
-		   Double centrality = (Double)n.getNodeData().getAttributes().getValue(betweennessColumn.getIndex());
-		   
-		   double standardizedBetweenness = roundTwoD(centrality / (((cnodes - 1) * (cnodes - 2))/2));
-			
-		   bc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedBetweenness, centrality));
-		}
-		
-		//Iterate over values
-		for (Node n : graph.getNodes()) {
-		   int centrality = (Integer)n.getNodeData().getAttributes().getValue(degreeColumn.getIndex());
-		   
-		   double standardizedDegree = roundTwoD((double) ((double) centrality / (double) (cnodes -1)));
-		   
-		   dc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedDegree, centrality));
-		}
-		
-		Collections.sort(cc,new NodeComparator());
-		Collections.sort(bc,new NodeComparator());
-		Collections.sort(dc,new NodeComparator());
-		
-		String output = "<top>\n\t<filename>"+filename+"</filename>\n\t<closenessCentrality>\n";
-		for(int i=0; i < cc.size(); i++){
-			String clearlabel = graph.getNode(cc.get(i).getSystemID()).getNodeData().getLabel();
-			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
-			
-			output += "\t\t<ranks>\n " +
-					"\t\t\t<place>"+ (i+1) +"</place>\n " +
-					"\t\t\t<id>" + cc.get(i).getId() + "</id>\n" +
-					"\t\t\t<label>"+ clearedlabel +"</label>\n" + 
-					"\t\t\t<svalue>"+ cc.get(i).getStandardizedValue() + "</svalue>\n" +
-					"\t\t\t<value>"+ cc.get(i).getValue() + "</value>\n" +
-							"\t\t</ranks>\n";
-		}
-		output +="\t</closenessCentrality>\n";
-		
-		output += "\t<betweennessCentrality>\n";
-		for(int i=0; i < bc.size(); i++){
-			String clearlabel = graph.getNode(bc.get(i).getSystemID()).getNodeData().getLabel();
-			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
-			
-			output += "\t\t<ranks>\n " +
-					"\t\t\t<place>"+ (i+1) +"</place>\n " +
-					"\t\t\t<id>" + bc.get(i).getId() + "</id>\n" +
-					"\t\t\t<label>"+ clearedlabel +"</label>\n" + 
-					"\t\t\t<svalue>"+ bc.get(i).getStandardizedValue() + "</svalue>\n" +
-					"\t\t\t<value>"+ bc.get(i).getValue() + "</value>\n" +
-							"\t\t</ranks>\n";
-		}
-		output +="\t</betweennessCentrality>\n";
-		
-		output += "\t<degreeCentrality>\n";
+	/**
+	 * @param graph
+	 * @param dc
+	 * @return
+	 */
+	private String printToXML(UndirectedGraph graph, ArrayList<MyNode> dc) {
+		String tempout = "";
 		for(int i=0; i < dc.size(); i++){
 			String clearlabel = graph.getNode(dc.get(i).getSystemID()).getNodeData().getLabel();
 			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
 			
-			output += "\t\t<ranks>\n " +
+			tempout += "\t\t<ranks>\n " +
 					"\t\t\t<place>"+ (i+1) +"</place>\n " +
 					"\t\t\t<id>" + dc.get(i).getId() + "</id>\n" +
 					"\t\t\t<label>"+ clearedlabel +"</label>\n" + 
@@ -327,9 +329,7 @@ public class Gephi{
 					"\t\t\t<value>"+ dc.get(i).getValue() + "</value>\n" +
 							"\t\t</ranks>\n";
 		}
-		output +="\t</degreeCentrality>\n</top>";
-		
-		return output;
+		return tempout;
 	}
 	
 	Gephi(){	

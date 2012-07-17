@@ -21,6 +21,13 @@ import java.util.TreeMap;
 public class Server extends UnicastRemoteObject implements ServerInterface {
 	private static String lastFileContent = "";
 	private static String lastHashValue = "";
+	private static final long serialVersionUID = 1L;
+	
+	Server() throws RemoteException
+	{
+		super();
+		System.out.println("Server created...");
+	}
 	
     /**
      * The method creates the specified file with the given content
@@ -84,7 +91,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     		try {
     			md = MessageDigest.getInstance("SHA-256");
     		} catch (NoSuchAlgorithmException e) {
-    			// TODO Auto-generated catch block
     			e.printStackTrace();
     		}
     		md.update(content.getBytes());
@@ -121,7 +127,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     	try {
     		md = MessageDigest.getInstance("SHA-256");
     	} catch (NoSuchAlgorithmException e) {
-    		// TODO Auto-generated catch block
     		e.printStackTrace();
     	}
     	md.update(content.getBytes());
@@ -155,17 +160,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     		createFile(path,stringcontent);
     	}
     }
-    
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	
-	Server() throws RemoteException
-	{
-		super();
-		System.out.println("Server created...");
-	}
 
 	@Override
 	public String getLocalCircos(String path, String item, String sna) throws RemoteException {
@@ -207,7 +201,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			}
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return "circos/gfx/"+hashname+"_"+sna+"_"+item+".png";
@@ -255,16 +248,18 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			
 			String output = "<table class=\"zebra-striped\">\n\t<tr><th>name</th><th>bib value</th></tr>\n";
 			
-			int count = 0;
+			int count = 1;
+			boolean stop = false;
 			for(int i = 0; i < rank; i++){
 				Entry<Integer,ArrayList <String>> temp = bib_coup_count.pollLastEntry();
 				
-				if(temp != null){
+				if(temp != null && !stop){
 					for(String entry : temp.getValue()){ // all entries for this value
 						output += "\t<tr><td>"+ entry +"</td>" +
 								"<td>"+temp.getKey()+"</td></tr>\n";
 						
 						if(count >= rank){
+							stop = true;
 							break;
 						}
 						count++;
@@ -332,7 +327,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			}
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return "circos/gfx/"+hashname+"_"+metric+"_"+rank+".png";
