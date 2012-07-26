@@ -178,44 +178,47 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		String hashname = hashCodeSHA256(path);
 		
 		CircosConfFile circconf = new CircosConfFile();
-		CircosTuple tuple = new CircosTuple(null,null);
 		Gephi gep = new Gephi();
-		gep.fillCircos(path, sna, 1000, tuple); // TODO 1000 *doof* eher so max = -1 oder so...
+		CircosTuple tuple = gep.fillCircos(path, sna, 100000);
 		
 		// clean nodes and edges
 		tuple.getEdges().cleanEdgeListToOnlyEdgesFromOneNode(item);
 		tuple.getNodes().cleanNodeListToEdges(tuple.getEdges());
 		
-		circconf.setNodes(tuple.getNodes());
-		circconf.setEdges(tuple.getEdges());
-		circconf.addParameter("image", "file", hashname+"_"+sna+"_"+item+".png");
-		circconf.addParameter("image", "dir", Settings.CIRCOS_GFX_PREFIX);
-		circconf.writeFile(hashname);
+		if(tuple.getNodes().getNodes().size() > 0){
+			circconf.setNodes(tuple.getNodes());
+			circconf.setEdges(tuple.getEdges());
+			circconf.addParameter("image", "file", hashname+"_"+sna+"_"+item+".png");
+			circconf.addParameter("image", "dir", Settings.CIRCOS_GFX_PREFIX);
+			circconf.writeFile(hashname);
+
+			String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
+			String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+".png" +
+					" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+"_small.png";
+			try {
+				Process p = Runtime.getRuntime().exec(runCommand);
+				InputStreamReader instream = new InputStreamReader(p.getInputStream());
+				BufferedReader in = new BufferedReader(instream);
+				String line = null;
+				while((line = in.readLine()) != null){
+					System.out.println(line);
+				}
+
+				Process p2 = Runtime.getRuntime().exec(resizeCommand);
+				InputStreamReader instream2 = new InputStreamReader(p2.getInputStream());
+				BufferedReader in2 = new BufferedReader(instream2);
+				line = null;
+				while((line = in2.readLine()) != null){
+					System.out.println(line);
+				}
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return "circos/gfx/"+hashname+"_"+sna+"_"+item+".png";
+		}else
+			return "error/gfx/zeroNodes.png";
 		
-		String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
-		String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+".png" +
-				" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+"_small.png";
-		try {
-			Process p = Runtime.getRuntime().exec(runCommand);
-			InputStreamReader instream = new InputStreamReader(p.getInputStream());
-			BufferedReader in = new BufferedReader(instream);
-			String line = null;
-			while((line = in.readLine()) != null){
-				System.out.println(line);
-			}
-			
-			Process p2 = Runtime.getRuntime().exec(resizeCommand);
-			InputStreamReader instream2 = new InputStreamReader(p2.getInputStream());
-			BufferedReader in2 = new BufferedReader(instream2);
-			line = null;
-			while((line = in2.readLine()) != null){
-				System.out.println(line);
-			}
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return "circos/gfx/"+hashname+"_"+sna+"_"+item+".png";
 	}
 	
 	public static void main(String [] args){	
@@ -271,6 +274,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		if( init_finished ){
 			ggraph.calculateGraph();
 			TreeMap<Integer, ArrayList <String>> bib_coup_count = ggraph.getBib_coup_count();
+			String hash = this.hashStringSHA256(ggraph.getGexfGraph());
 			ggraph.close();
 			
 			String output = "<table class=\"zebra-striped\">\n\t<tr><th>name</th><th>bib value</th></tr>\n";
@@ -282,7 +286,15 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				
 				if(temp != null && !stop){
 					for(String entry : temp.getValue()){ // all entries for this value
-						output += "\t<tr><td>"+ entry +"</td>" +
+						String [] labels = entry.split("###");
+						String id1 = ggraph.getLabelToIDMap().get(labels[0].trim());
+						String id2 = ggraph.getLabelToIDMap().get(labels[1].trim());
+						
+						String labellink = "<a href=\""+ Settings.TomcatURLToServlet +"id=" + hash + "&item=" +
+								"" + id1 +"&snatype=bc\">"+ labels[0] +"</a>" + " to <a href=\""+ Settings.TomcatURLToServlet +"id=" + 
+								hash + "&item=" + "" + id2 +"&snatype=bc\">"+ labels[1] +"</a>" + "";
+						
+						output += "\t<tr><td>"+ labellink +"</td>" +
 								"<td>"+temp.getKey()+"</td></tr>\n";
 						
 						if(count >= rank){
@@ -343,9 +355,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		String hashname = hashCodeSHA256(filename);
 		
 		CircosConfFile circconf = new CircosConfFile();
-		CircosTuple tuple = new CircosTuple(null,null);
 		Gephi gep = new Gephi();
-		gep.fillCircos(filename, metric, rank, tuple);
+		CircosTuple tuple = gep.fillCircos(filename, metric, rank);
 		CircosEdgeList circedges = tuple.getEdges();
 		CircosNodeList circnodes = tuple.getNodes();
 		
@@ -417,5 +428,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}else{
 			return Settings.DOMAIN_PREFIX + "ERROR";
 		}
+	}
+
+	/**
+	 * This method returns a path to a .gephi project file
+	 * 
+	 * @param hashPath the path to the gexf file, that should be included in this project
+	 * @return a string that contains the path to the .gephi file
+	 */
+	public String getPathToProject(String hashPath) throws RemoteException {
+		Gephi gephi = new Gephi();	
+		return gephi.getProject(hashPath);
 	}
 }

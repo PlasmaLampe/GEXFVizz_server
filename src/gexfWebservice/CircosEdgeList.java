@@ -7,14 +7,18 @@ public class CircosEdgeList extends CircosList{
 		private String id;
 		private String from;
 		private String to;
-		private float pos;
+		private float weight;
+		private double offsetStart;
+		private double offsetEnd;
 		
-		public CircosEdge(String id, String from, String to, float pos) {
+		public CircosEdge(String id, String from, String to, float weight, double offsetStart, double offsetEnd) {
 			super();
 			this.id = id;
 			this.from = from;
 			this.to = to;
-			this.pos = pos;
+			this.weight = weight;
+			this.offsetStart = offsetStart;
+			this.offsetEnd = offsetEnd;
 		}
 
 		/**
@@ -39,10 +43,24 @@ public class CircosEdgeList extends CircosList{
 		}
 
 		/**
-		 * @return the position
+		 * @return the weight
 		 */
-		public float getPos() {
-			return pos;
+		public float getWeight() {
+			return weight;
+		}
+
+		/**
+		 * @return the offset of the start node
+		 */
+		public double getOffsetStartNode() {
+			return offsetStart;
+		}
+		
+		/**
+		 * @return the offset of the end node
+		 */
+		public double getOffsetEndNode() {
+			return offsetEnd;
 		}
 	}
 	
@@ -82,7 +100,7 @@ public class CircosEdgeList extends CircosList{
 		boolean containsNode = false;
 		
 		for(CircosEdge localedge : edges){
-			if(localedge.from == NodeID || localedge.to == NodeID){
+			if(localedge.from.equals(NodeID) || localedge.to.equals(NodeID)){
 				containsNode = true;
 				break;
 			}
@@ -95,16 +113,16 @@ public class CircosEdgeList extends CircosList{
 		edges = new ArrayList<CircosEdge>();
 	}
 	
-	public void addEdge(String from, String to, float pos){
-		edges.add(new CircosEdge(from+"#"+to, from, to, pos));
+	public void addEdge(String from, String to, float weight, double offsetStartNode, double OffsetEndNode){
+		edges.add(new CircosEdge(from+"#"+to, from, to, weight, offsetStartNode, OffsetEndNode));
 	}
 
 	@Override
 	public void writeFile(String hashname) {
 		int count = 0;
 		for(CircosEdge edge : edges){
-			output += edge.getID()+"#"+count + " " + edge.getFrom() + " 0 " + (int) (edge.getPos() * 100) + "\n";
-			output += edge.getID()+"#"+count + " " + edge.getTo() + " 0 " + (int) (edge.getPos() * 100) + "\n";
+			output += edge.getID()+"#"+count + " " + edge.getFrom() + " " + (int) edge.getOffsetStartNode() + " " + (int) (edge.getOffsetStartNode() + edge.getWeight()) + "\n";
+			output += edge.getID()+"#"+count + " " + edge.getTo() + " " + (int) edge.getOffsetEndNode() + " " + (int) (edge.getOffsetEndNode() + edge.getWeight()) + "\n";
 			count++;
 		}
 		

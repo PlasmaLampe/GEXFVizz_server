@@ -11,6 +11,7 @@ public class CircosConfFile {
 	
 	private HashMap<String,String> linkparameter;
 	private HashMap<String,String> imageparameter;
+	private HashMap<String,String> colors;
 	
 	private String output;
 	private boolean useTicks;
@@ -64,12 +65,15 @@ public class CircosConfFile {
 		
 		linkparameter = new HashMap<String,String>();
 		imageparameter = new HashMap<String,String>();
+		colors = new HashMap<String,String>();
+		colors.put("chr", "0,0,0");
 		linkparameter.put("file", "data/links2.txt"); // default value
-		linkparameter.put("radius", "0.95r"); // default value
+		linkparameter.put("radius", "0.7r"); // default value
 		linkparameter.put("bezier_radius", "0.1r"); // default value
 		linkparameter.put("color", "black_a4"); // default value
 		linkparameter.put("thickness", "3"); // default value
 		linkparameter.put("ribbon", "yes"); // default value
+		linkparameter.put("flat", "yes");
 		
 		imageparameter.put("dir","."); // default value
 		imageparameter.put("file","circos.png"); // default value
@@ -82,7 +86,7 @@ public class CircosConfFile {
 		imageparameter.put("background","white"); // default value
 		
 		useIdeogram = true;
-		useTicks = false;
+		useTicks = true;
 		edges = null;
 		nodes = null;
 	}
@@ -102,22 +106,39 @@ public class CircosConfFile {
 		this.nodes = nodes;
 	}
 
-	public void writeFile(String hashname){
+	public void writeFile(String hashname){	
 		// write node and edge file
 		nodes.writeFile(hashname);
 		edges.writeFile(hashname);
+		
+		// get colors 
+		colors = nodes.getColors();
 		
 		// update data in configuration file
 		karyotype = Settings.CIRCOS_DATA_PREFIX+"node"+hashname+".txt";
 		addParameter("link", "file", Settings.CIRCOS_DATA_PREFIX+"edge"+hashname+".txt");
 		
 		// write configuration file
-		output = "karyotype = " + karyotype + "\n<links>\n\t<link>\n\t\t";
+		output = "karyotype = " + karyotype + "\n<colors>\n\t\t";
+		
+		for(String item : colors.keySet()){ // write all link parameter
+			output += item + " = " + colors.get(item) + "\n\t\t";
+			
+			// check colors - bugfix 'hack ???'
+			if(item.endsWith("b")){
+				output += item.substring(0, item.length()-1) + " = " + colors.get(item) + "\n\t\t";
+			}
+		}
+		
+		output += "\n</colors>\n<links>\n\t<link>\n\t\t";
 		
 		for(String item : linkparameter.keySet()){ // write all link parameter
 			output += item + " = " + linkparameter.get(item) + "\n\t\t";
 		}
 		
+		output += "<rules>\n\t\t<rule>\n\t\timportance = 100\n\t\tcondition  = 1\n\t\tcolor = eval(var(chr1))" +
+				"\n\t\tflow = continue\n\t\t</rule>\n\t\t</rules>";
+	
 		output += "\n\t</link>\n</links>\n";
 		
 		if(useIdeogram){

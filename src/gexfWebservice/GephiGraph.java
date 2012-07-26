@@ -322,19 +322,20 @@ class CoCitationGraph extends GephiGraph{
 
 class BibliographicCouplingGraph extends GephiGraph{
 	private TreeMap<Integer, ArrayList<String>> bib_coup_count; // this car is needed for the tabular visulization of the edges
-	
+	private HashMap<String,String> labelToIDMap;
 	public BibliographicCouplingGraph(String eventid, String eventseriesid, String syear,
 			String eyear) {
 		super(eventid, eventseriesid, syear, eyear);
 		
 		bib_coup_count = new TreeMap<Integer, ArrayList<String>>();
+		labelToIDMap = new HashMap<String,String>();
 	}
 
 	public void addEntryToBibCoup(String fromName, String toName, int value){
 		if(!bib_coup_count.containsKey(value)){
 			bib_coup_count.put(value, new ArrayList<String>());
 		}
-		bib_coup_count.get(value).add(fromName+" to "+toName);
+		bib_coup_count.get(value).add(fromName+" ### "+toName);
 	}
 	
 	/**
@@ -342,6 +343,14 @@ class BibliographicCouplingGraph extends GephiGraph{
 	 */
 	public TreeMap<Integer, ArrayList<String>> getBib_coup_count() {
 		return bib_coup_count;
+	}
+
+	
+	/**
+	 * @return the labelToIDMap
+	 */
+	public HashMap<String, String> getLabelToIDMap() {
+		return labelToIDMap;
 	}
 
 	@Override
@@ -398,6 +407,9 @@ class BibliographicCouplingGraph extends GephiGraph{
 			
 			gexfGraph += "\t\t\t<node id=\""+ mapOfPublications.get(publication).getId() +"\" " +
 					"label=\""+ clearedlabel +"\" start=\""+ mapOfPublications.get(publication).getPublishedInYear() +"\"></node>\n";
+			
+			// store label <-> id
+			this.labelToIDMap.put(clearedlabel, publication);
 		}		
 		
 		// write edges

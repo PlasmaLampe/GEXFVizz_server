@@ -12,4 +12,5 @@ public interface ServerInterface extends Remote
 	public String getBCEdges(String eventid, String eventseriesid, String syear, String eyear, int rank) throws RemoteException;
 	public String getNodesAndEdges(String path) throws RemoteException;
 	public double getDensity(String path) throws RemoteException;
+	public String getPathToProject(String hashPath) throws RemoteException;
 }

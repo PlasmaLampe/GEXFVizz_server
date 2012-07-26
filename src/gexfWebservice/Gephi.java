@@ -3,12 +3,14 @@ package gexfWebservice;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 
 import org.gephi.data.attributes.api.AttributeColumn;
 import org.gephi.data.attributes.api.AttributeController;
 import org.gephi.data.attributes.api.AttributeModel;
 import org.gephi.graph.api.DirectedGraph;
 import org.gephi.graph.api.Edge;
+import org.gephi.graph.api.EdgeIterable;
 import org.gephi.graph.api.GraphController;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.Node;
@@ -36,7 +38,7 @@ public class Gephi{
 		return result;
 	}
 	
-	CircosTuple fillCircos(String path, String metric, int rank, CircosTuple fillThis){
+	CircosTuple fillCircos(String path, String metric, int rank){
 		CircosNodeList mynodes = new CircosNodeList();
 		CircosEdgeList myedges = new CircosEdgeList();
 		
@@ -50,61 +52,74 @@ public class Gephi{
 		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
 
         //Import file       
-        Container container;
-        try {
-            File file = new File(path);
-        	container = importController.importFile(file);
-            container.getLoader();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return null;
-        }
+		Container container = importFileToContainer(path, importController);
+		if(container != null){
+			importController.process(container, new DefaultProcessor(), workspace);
+			UndirectedGraph graph = graphModel.getUndirectedGraph();
+			GraphDistance distance = new GraphDistance();
+			distance.setDirected(false);
+			distance.execute(graphModel, attributeModel);
 
-		importController.process(container, new DefaultProcessor(), workspace);
-		UndirectedGraph graph = graphModel.getUndirectedGraph();
-		GraphDistance distance = new GraphDistance();
-		distance.setDirected(false);
-		distance.execute(graphModel, attributeModel);
-		
-		Degree deg = new Degree();
-		deg.execute(graphModel, attributeModel);
-		 
-		AttributeColumn metricCol = null;
-		switch(metric){
-		case "cc":
-			metricCol = attributeModel.getNodeTable().getColumn(GraphDistance.CLOSENESS);
-			break;
-		case "dc":
-			metricCol = attributeModel.getNodeTable().getColumn(Degree.DEGREE);
-			break;
-		case "bc":
-			metricCol = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);;
-			break;
+			Degree deg = new Degree();
+			deg.execute(graphModel, attributeModel);
+
+			AttributeColumn metricCol = null;
+			switch(metric){
+			case "cc":
+				metricCol = attributeModel.getNodeTable().getColumn(GraphDistance.CLOSENESS);
+				break;
+			case "dc":
+				metricCol = attributeModel.getNodeTable().getColumn(Degree.DEGREE);
+				break;
+			case "bc":
+				metricCol = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);;
+				break;
+			}
+			
+			HashMap <String, Double> adjacent_nodes_sum = new HashMap<String,Double>();
+			for(Node node : graph.getNodes()){
+				// we need the sum of the weights of the adjacent edges
+				EdgeIterable adjacentEdges = graph.getEdges(node);
+				
+				double sum = 0.0d;
+				for(Edge adjacentedge : adjacentEdges){
+					sum += adjacentedge.getWeight();
+				}
+				// create the node
+				String stringcentrality = "" + node.getNodeData().getAttributes().getValue(metricCol.getIndex());
+				Double centrality = Double.parseDouble(stringcentrality);
+				mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), centrality, sum);
+				
+				// store temp data
+				adjacent_nodes_sum.put(node.getNodeData().getId(), 0.0d);
+			}
+
+			for(Edge edge : graph.getEdges()){
+				double offsetS = adjacent_nodes_sum.get(edge.getEdgeData().getSource().getId());
+				double offsetE = adjacent_nodes_sum.get(edge.getEdgeData().getTarget().getId());
+				
+				myedges.addEdge(edge.getEdgeData().getSource().getId(), edge.getEdgeData().getTarget().getId(), edge.getWeight(), 
+						offsetS,offsetE);
+				
+				adjacent_nodes_sum.remove(edge.getEdgeData().getSource());
+				adjacent_nodes_sum.remove(edge.getEdgeData().getTarget());
+				
+				adjacent_nodes_sum.put(edge.getEdgeData().getSource().getId(), offsetS + edge.getWeight());
+				adjacent_nodes_sum.put(edge.getEdgeData().getTarget().getId(), offsetE + edge.getWeight());
+			}
+
+			mynodes.cutAfterRank(rank);
+			myedges.cleanEdgeList(mynodes);
+
+			CircosTuple tuple = new CircosTuple(myedges, mynodes);
+
+			pc.closeCurrentWorkspace();
+			pc.closeCurrentProject();
+
+			return tuple;
 		}
-		
-		for(Node node : graph.getNodes()){
-			String stringcentrality = "" + node.getNodeData().getAttributes().getValue(metricCol.getIndex());
-			Double centrality = Double.parseDouble(stringcentrality);
-			if(centrality != 0)
-				mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), centrality * 100);
-			else
-				mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), 1.0d);
-		}
-		
-		for(Edge edge : graph.getEdges()){
-			myedges.addEdge(edge.getEdgeData().getSource().getId(), edge.getEdgeData().getTarget().getId(), edge.getWeight());
-		}
-		
-		mynodes.cutAfterRank(rank);
-		myedges.cleanEdgeList(mynodes);
-		
-		fillThis.setEdges(myedges);
-		fillThis.setNodes(mynodes);
-		
-		pc.closeCurrentWorkspace();
-		pc.closeCurrentProject();
-		
-		return fillThis;
+		else 
+			return null;
 	}
 	/**
 	 * returns the #nodes of the given file
@@ -211,8 +226,7 @@ public class Gephi{
 			return dens.getDensity();
         }else{
         	return -1.0;
-        }
-		
+        }	
 	}
 	
 	/**
@@ -335,5 +349,29 @@ public class Gephi{
 	Gephi(){	
 		
 
+	}
+
+	public String getProject(String hashPath) {
+		//Init a project
+		ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
+		pc.newProject();
+		Workspace workspace = pc.getCurrentWorkspace();
+
+		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
+
+        Container container = importFileToContainer(hashPath, importController);
+		if(container != null){
+			importController.process(container, new DefaultProcessor(), workspace);
+			String name = hashPath.substring(hashPath.lastIndexOf("/")+1, hashPath.lastIndexOf("."));
+			String projectpath = Settings.APACHE_PATH + "data/" + name + ".gephi";
+			Runnable run = pc.saveProject(pc.getCurrentProject(), new File(projectpath));
+			run.run();
+			pc.closeCurrentWorkspace();
+			pc.closeCurrentProject();
+			
+			return Settings.HTTPIP + "data/" + name + ".gephi";
+        }else{
+        	return "ERROR";
+        }
 	}
 }
