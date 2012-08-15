@@ -9,12 +9,45 @@ class CircosNode implements Comparable<CircosNode>{
 	private String label;
 	private double snaMetricValue;
 	private double szMetricValue;
+	private HashMap<String,Integer> growthsPerYear;
+	private String start;
+	private String end;
 	
-	public CircosNode(String id, String label, double snaMetricValue, double szMetricValue) {
+	/**
+	 * @return the start
+	 */
+	public String getStart() {
+		return start;
+	}
+
+	/**
+	 * @param start the start to set
+	 */
+	public void setStart(String start) {
+		this.start = start;
+	}
+
+	/**
+	 * @return the end
+	 */
+	public String getEnd() {
+		return end;
+	}
+
+	/**
+	 * @param end the end to set
+	 */
+	public void setEnd(String end) {
+		this.end = end;
+	}
+
+	public CircosNode(String id, String label, double snaMetricValue, double szMetricValue, HashMap<String,Integer> growthsPerYear) {
 		this.id = id;
 		this.label = label;
 		this.snaMetricValue = snaMetricValue;
 		this.szMetricValue = szMetricValue;
+		
+		this.growthsPerYear = growthsPerYear;
 	}
 
 	public String getID() {
@@ -25,12 +58,12 @@ class CircosNode implements Comparable<CircosNode>{
 		return label;
 	}
 	
-	public Double getSnaMetricValue() {
+	public double getSnaMetricValue() {
 		return snaMetricValue;
 	}
 
 	public int compareTo(CircosNode o) {
-		return (int)((o.getSnaMetricValue() * 1000) - (this.getSnaMetricValue() * 1000));
+		return (int)((o.getSzMetricValue() * 1000) - (this.getSzMetricValue() * 1000));
 	}
 
 	/**
@@ -39,8 +72,13 @@ class CircosNode implements Comparable<CircosNode>{
 	public double getSzMetricValue() {
 		return szMetricValue;
 	}
-	
-	
+
+	/**
+	 * @return the growthsPerYear
+	 */
+	public HashMap<String, Integer> getGrowthsPerYear() {
+		return growthsPerYear;
+	}
 }
 
 public class CircosNodeList extends CircosList{
@@ -50,13 +88,13 @@ public class CircosNodeList extends CircosList{
 	
 	public CircosNodeList() {
 		nodes = new ArrayList<CircosNode>();
-		maxLabelLenght = 20;
+		maxLabelLenght = 30;
 		colors = new HashMap<String,String>();
 	}
 	
-	public void addNode(String id, String label, double sna, double sz){
+	public void addNode(String id, String label, double sna, double sz, HashMap<String,Integer> growthsPerYear){
 		String cleanlabel = this.createID(label);
-		nodes.add(new CircosNode(id, cleanlabel, sna, sz));
+		nodes.add(new CircosNode(id, cleanlabel, sna, sz, growthsPerYear));
 		
 		String color = Math.round(Math.random() * 255) + "," + 
 				Math.round(Math.random() * 255) + "," + Math.round(Math.random() * 255); 
@@ -127,7 +165,9 @@ public class CircosNodeList extends CircosList{
 			}else{
 				useThisLabel = node.getLabel();
 			}
-			output += "chr - " + node.getID() + " " + useThisLabel + " 0 " + Math.round(node.getSzMetricValue()) + " " + node.getID() + " \n";
+			output += "chr" + Settings.CIRCOS_DELIMITER + "-" + Settings.CIRCOS_DELIMITER + node.getID() + Settings.CIRCOS_DELIMITER + useThisLabel + 
+					Settings.CIRCOS_DELIMITER + "0" + Settings.CIRCOS_DELIMITER + Math.round(node.getSzMetricValue()) + 
+					Settings.CIRCOS_DELIMITER + node.getID() + "\n";
 		}
 		createFile(Settings.CIRCOS_DATA_PREFIX+"node"+hashname+".txt", output);
 	}

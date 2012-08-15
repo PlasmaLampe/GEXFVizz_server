@@ -3,6 +3,8 @@
  */
 package gexfWebservice;
 
+import java.util.HashSet;
+
 public class CircosTuple {
 	private CircosEdgeList edges;
 	private CircosNodeList nodes;
@@ -44,5 +46,16 @@ public class CircosTuple {
 		this.nodes = nodes;
 	}
 	
-	
+	public HashSet<String> getAdjecentNodeIDs(String item){
+		HashSet<String> anodes = new HashSet<String>();
+		
+		for(CircosEdge edge : edges.getEdges()){
+			if(edge.getFrom().equals(item)){
+				anodes.add(edge.getTo());
+			}else if(edge.getTo().equals(item)){
+				anodes.add(edge.getFrom());
+			}
+		}
+		return anodes;
+	}
 }

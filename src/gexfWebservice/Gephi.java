@@ -1,6 +1,10 @@
 package gexfWebservice;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,6 +28,10 @@ import org.gephi.statistics.plugin.Degree;
 import org.gephi.statistics.plugin.GraphDensity;
 import org.gephi.statistics.plugin.GraphDistance;
 import org.openide.util.Lookup;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 public class Gephi{
 	/**
@@ -38,6 +46,33 @@ public class Gephi{
 		return result;
 	}
 	
+    /**
+     * This method reads the content of a given file
+     * 
+     * @param path the path to the file
+     * @return the content of the file as a String
+     */
+    private String getContent(String path){
+    	File tempfile = new File(path);
+    	String contentOfFile ="";
+
+    	try {
+    		BufferedReader input =  new BufferedReader(new FileReader(tempfile));
+    		try {
+    			String line = null; 
+    			while (( line = input.readLine()) != null){
+    				contentOfFile += line;
+    			}
+    		}finally {
+    			input.close();
+    		}
+    	}catch (Exception e){
+    		e.printStackTrace();
+    	}
+
+    	return contentOfFile.toString();
+    }
+    
 	CircosTuple fillCircos(String path, String metric, int rank){
 		CircosNodeList mynodes = new CircosNodeList();
 		CircosEdgeList myedges = new CircosEdgeList();
@@ -50,11 +85,13 @@ public class Gephi{
 		AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
 		GraphModel graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
 		ImportController importController = Lookup.getDefault().lookup(ImportController.class);
-
-        //Import file       
+		 
 		Container container = importFileToContainer(path, importController);
+		 
 		if(container != null){
 			importController.process(container, new DefaultProcessor(), workspace);
+	    	GephiYearExtractor gex = extractDatesFromGEXF(path);
+	    	
 			UndirectedGraph graph = graphModel.getUndirectedGraph();
 			GraphDistance distance = new GraphDistance();
 			distance.setDirected(false);
@@ -78,17 +115,30 @@ public class Gephi{
 			
 			HashMap <String, Double> adjacent_nodes_sum = new HashMap<String,Double>();
 			for(Node node : graph.getNodes()){
+				HashMap<String,Integer> growthsPerYear = new HashMap<String,Integer>();
+				
 				// we need the sum of the weights of the adjacent edges
 				EdgeIterable adjacentEdges = graph.getEdges(node);
 				
 				double sum = 0.0d;
 				for(Edge adjacentedge : adjacentEdges){
 					sum += adjacentedge.getWeight();
+					
+					Node othernode = getOtherNodeOnAdjacentEdge(node, adjacentedge);
+					String spawn = gex.getStartOfID(othernode.getNodeData().getId());
+					
+					if(growthsPerYear.containsKey(spawn)){
+						int temp = growthsPerYear.get(spawn);
+						growthsPerYear.remove(spawn);
+						growthsPerYear.put(spawn, temp+1);
+					}else{
+						growthsPerYear.put(spawn, 1);
+					}
 				}
 				// create the node
 				String stringcentrality = "" + node.getNodeData().getAttributes().getValue(metricCol.getIndex());
 				Double centrality = Double.parseDouble(stringcentrality);
-				mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), centrality, sum);
+				mynodes.addNode(node.getNodeData().getId(), node.getNodeData().getLabel(), centrality, sum, growthsPerYear);
 				
 				// store temp data
 				adjacent_nodes_sum.put(node.getNodeData().getId(), 0.0d);
@@ -120,6 +170,45 @@ public class Gephi{
 		}
 		else 
 			return null;
+	}
+
+	/**
+	 * @param path
+	 * @return
+	 */
+	private GephiYearExtractor extractDatesFromGEXF(String path) {
+		XMLReader xmlReader = null;
+		GephiYearExtractor gex = new GephiYearExtractor();
+		try {
+			xmlReader = XMLReaderFactory.createXMLReader();
+		} catch (SAXException e) {
+			e.printStackTrace();
+		}
+		String xml = getContent(path);
+		InputSource inputSource = new InputSource(new StringReader(xml));
+		xmlReader.setContentHandler(gex);
+		try {
+			xmlReader.parse(inputSource);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (SAXException e) {
+			e.printStackTrace();
+		}
+		return gex;
+	}
+
+	/**
+	 * @param node
+	 * @param adjacentedge
+	 * @return
+	 */
+	private Node getOtherNodeOnAdjacentEdge(Node node, Edge adjacentedge) {
+		if(adjacentedge.getTarget().getNodeData().getId().equals(node.getNodeData().getId())){
+			return adjacentedge.getSource();
+		}else if(adjacentedge.getSource().getNodeData().getId().equals(node.getNodeData().getId())){
+			return adjacentedge.getTarget();
+		}
+		return null;
 	}
 	/**
 	 * returns the #nodes of the given file
@@ -374,4 +463,5 @@ public class Gephi{
         	return "ERROR";
         }
 	}
+
 }

@@ -16,6 +16,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
@@ -23,7 +24,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	private static String lastHashValue = "";
 	private static final long serialVersionUID = 1L;
 	
-	Server() throws RemoteException
+	public Server() throws RemoteException
 	{
 		super();
 		System.out.println("Server created...");
@@ -179,10 +180,12 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		
 		CircosConfFile circconf = new CircosConfFile();
 		Gephi gep = new Gephi();
+		
 		CircosTuple tuple = gep.fillCircos(path, sna, 100000);
+		Set<String> anodes = tuple.getAdjecentNodeIDs(item);
 		
 		// clean nodes and edges
-		tuple.getEdges().cleanEdgeListToOnlyEdgesFromOneNode(item);
+		tuple.getEdges().cleanEdgeListToOnlyEdgesFromOneNodeOrBetweenTwoAdjacentNodes(item, anodes);
 		tuple.getNodes().cleanNodeListToEdges(tuple.getEdges());
 		
 		if(tuple.getNodes().getNodes().size() > 0){
@@ -193,8 +196,13 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			circconf.writeFile(hashname);
 
 			String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
-			String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+".png" +
-					" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+"_small.png";
+			//String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+".png" +
+			//		" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+sna+"_"+item+"_small.png";
+			String zipCommand = "zip "+ Settings.CIRCOS_DATA_PREFIX+hashname +" "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt " + Settings.CIRCOS_DATA_PREFIX+"edge"+hashname+".txt " + 
+					Settings.CIRCOS_DATA_PREFIX+"node"+hashname+".txt " + Settings.CIRCOS_DATA_PREFIX+"ideogram.conf " + 
+					Settings.CIRCOS_DATA_PREFIX+"ticks.conf "+ Settings.CIRCOS_DATA_PREFIX+"sna"+hashname+".txt "+
+					Settings.CIRCOS_DATA_PREFIX+"gpy"+hashname+".txt ";
+			
 			try {
 				Process p = Runtime.getRuntime().exec(runCommand);
 				InputStreamReader instream = new InputStreamReader(p.getInputStream());
@@ -204,14 +212,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 					System.out.println(line);
 				}
 
-				Process p2 = Runtime.getRuntime().exec(resizeCommand);
-				InputStreamReader instream2 = new InputStreamReader(p2.getInputStream());
-				BufferedReader in2 = new BufferedReader(instream2);
-				line = null;
-				while((line = in2.readLine()) != null){
-					System.out.println(line);
-				}
-
+				//Runtime.getRuntime().exec(resizeCommand);
+				Runtime.getRuntime().exec(zipCommand);
+				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -220,7 +223,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			return "error/gfx/zeroNodes.png";
 		
 	}
-	
+
 	public static void main(String [] args){	
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
@@ -277,7 +280,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			String hash = this.hashStringSHA256(ggraph.getGexfGraph());
 			ggraph.close();
 			
-			String output = "<table class=\"zebra-striped\">\n\t<tr><th>name</th><th>bib value</th></tr>\n";
+			String output = "<table class=\"sortable\">\n\t<tr><th>name</th><th>bib value</th></tr>\n";
 			
 			int count = 1;
 			boolean stop = false;
@@ -367,8 +370,12 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		circconf.writeFile(hashname);
 		
 		String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
-		String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+metric+"_"+rank+".png" +
-				" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+metric+"_"+rank+"_small.png";
+		//String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+metric+"_"+rank+".png" +
+		//		" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+metric+"_"+rank+"_small.png";
+		String zipCommand = "zip "+ Settings.CIRCOS_DATA_PREFIX+hashname +" "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt " + Settings.CIRCOS_DATA_PREFIX+"edge"+hashname+".txt " + 
+				Settings.CIRCOS_DATA_PREFIX+"node"+hashname+".txt " + Settings.CIRCOS_DATA_PREFIX+"ideogram.conf " + 
+				Settings.CIRCOS_DATA_PREFIX+"ticks.conf "+ Settings.CIRCOS_DATA_PREFIX+"sna"+hashname+".txt "+
+				Settings.CIRCOS_DATA_PREFIX+"gpy"+hashname+".txt ";
 		try {
 			Process p = Runtime.getRuntime().exec(runCommand);
 			InputStreamReader instream = new InputStreamReader(p.getInputStream());
@@ -378,13 +385,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				System.out.println(line);
 			}
 			
-			Process p2 = Runtime.getRuntime().exec(resizeCommand);
-			InputStreamReader instream2 = new InputStreamReader(p2.getInputStream());
-			BufferedReader in2 = new BufferedReader(instream2);
-			line = null;
-			while((line = in2.readLine()) != null){
-				System.out.println(line);
-			}
+			//Runtime.getRuntime().exec(resizeCommand);
+			Runtime.getRuntime().exec(zipCommand);
 			
 		} catch (IOException e) {
 			e.printStackTrace();

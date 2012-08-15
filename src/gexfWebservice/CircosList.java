@@ -23,7 +23,8 @@ public abstract class CircosList {
     }
     
     protected String createID(String label){
-    	return label.replace(' ', '_');
+    	//return label.replace(' ', '_');
+    	return label;
     }
     
 	public void writeFile(String hashname){}
