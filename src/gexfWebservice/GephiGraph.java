@@ -70,7 +70,7 @@ public class GephiGraph {
 				// get a part of an eventseries - build up the query ... 
 				// first: get the name of the eventseries
 				Statement namestmt = con.createStatement();
-				ResultSet rsname = namestmt.executeQuery( "SELECT text FROM eventseries WHERE id =\""+eventseriesid+"\"" );
+				ResultSet rsname = namestmt.executeQuery( "SELECT filepath FROM eventseries WHERE id =\""+eventseriesid+"\"" );
 				String conferenceName = "";
 				while( rsname.next() ){
 					conferenceName = rsname.getString(1);
@@ -85,13 +85,16 @@ public class GephiGraph {
 				String idconfstring = "";
 				
 				while( tsyear <= Integer.parseInt(eyear) ){  // generate list of possible conferences
-					confstring += "\""+conferenceName+" "+tsyear+"\",";
+					confstring += "\""+conferenceName+"/"+tsyear+"\",";
+					for(int i = 0; i < Settings.MAX_AMOUNT_OF_CONFERENCE_ISSUES;i++){
+						confstring += "\""+conferenceName+"/"+tsyear+"/"+"Issue"+i+"\",";
+					}
 					tsyear++;
 				}
 				
 				// now: load the conference ids
 				Statement idstmt = con.createStatement();
-				String idQuery = "SELECT id FROM event WHERE text IN (" + confstring.substring(0, confstring.length()-1) + ")";
+				String idQuery = "SELECT id FROM event WHERE filepath IN (" + confstring.substring(0, confstring.length()-1) + ")";
 				ResultSet rsid = idstmt.executeQuery( idQuery );
 				if(Settings.DEBUG){
 					System.out.println(" started idquery: " + idQuery);
@@ -163,7 +166,10 @@ public class GephiGraph {
 				while( yearrs.next() ){
 					year = yearrs.getString(1);
 				}
-				int cleanyear = Integer.parseInt(year.replaceAll("[a-zA-Z]", "").trim());
+				
+				String [] yearArray = year.split(" ");
+				int cleanyear = Integer.parseInt(yearArray[1].trim());
+
 				yearrs.close();
 				yearstmt.close();
 				
@@ -205,9 +211,9 @@ public class GephiGraph {
 	/**
 	 * This method establishes the connection to the given MYSQL DB.
 	 * 
-	 * @param to
-	 * @param user
-	 * @param pass
+	 * @param to is the pass to the database e.g. aan.cs.upb.de
+	 * @param username
+	 * @param password
 	 */
 	public void connectToDB(String to, String user, String pass){
 		try {
@@ -295,7 +301,7 @@ class CoCitationGraph extends GephiGraph{
 		// write nodes
 		for(String publication : setOfPublicationIDs){
 			String clearlabel = mapOfPublications.get(publication).getTitle();
-			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
+			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "").replaceAll("&", " and ");
 			
 			gexfGraph += "\t\t\t<node id=\""+ mapOfPublications.get(publication).getId() +"\" " +
 					"label=\""+ clearedlabel +"\" start=\""+ mapOfPublications.get(publication).getPublishedInYear() +"\"></node>\n";
@@ -403,7 +409,10 @@ class BibliographicCouplingGraph extends GephiGraph{
 		// write nodes
 		for(String publication : setOfPublicationIDs){
 			String clearlabel = mapOfPublications.get(publication).getTitle();
-			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "");
+			String clearedlabel = "NULL";
+			if(clearlabel != null){
+				clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "").replaceAll("&", " and ");
+			}
 			
 			gexfGraph += "\t\t\t<node id=\""+ mapOfPublications.get(publication).getId() +"\" " +
 					"label=\""+ clearedlabel +"\" start=\""+ mapOfPublications.get(publication).getPublishedInYear() +"\"></node>\n";

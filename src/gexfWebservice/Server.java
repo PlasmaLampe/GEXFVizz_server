@@ -2,7 +2,9 @@ package gexfWebservice;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -14,6 +16,11 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -172,16 +179,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * 
 	 * @param path the path to the gexf file that should be used
 	 * @param item the item which is the central part of this circos visualization
-	 * @param sna the used metric for the circos ideogram (eg. "cc","dc","bc")
+	 * @param metric the used metric for the circos ideogram (eg. "cc","dc","bc")
 	 * @return a string that contains the path to the image 
 	 */
-	public String getLocalCircos(String path, String item, String sna) throws RemoteException {
+	public String getLocalCircos(String path, String item, String metric) throws RemoteException {
 		String hashname = hashCodeSHA256(path);
 		
 		CircosConfFile circconf = new CircosConfFile();
 		Gephi gep = new Gephi();
 		
-		CircosTuple tuple = gep.fillCircos(path, sna, 100000);
+		CircosTuple tuple = gep.fillCircos(path, metric, 100000);
 		Set<String> anodes = tuple.getAdjecentNodeIDs(item);
 		
 		// clean nodes and edges
@@ -191,7 +198,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		if(tuple.getNodes().getNodes().size() > 0){
 			circconf.setNodes(tuple.getNodes());
 			circconf.setEdges(tuple.getEdges());
-			circconf.addParameter("image", "file", hashname+"_"+sna+"_"+item+".png");
+			circconf.addParameter("image", "file", hashname+"_"+metric+"_"+item+".png");
 			circconf.addParameter("image", "dir", Settings.CIRCOS_GFX_PREFIX);
 			circconf.writeFile(hashname);
 
@@ -218,7 +225,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			return "circos/gfx/"+hashname+"_"+sna+"_"+item+".png";
+			return "circos/gfx/"+hashname+"_"+metric+"_"+item+".png";
 		}else
 			return "error/gfx/zeroNodes.png";
 		
@@ -272,7 +279,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	public String getBCEdges(String eventid,String eventseriesid,String syear,String eyear, int rank) throws RemoteException {
 		BibliographicCouplingGraph ggraph = new BibliographicCouplingGraph(eventid, eventseriesid, syear, eyear);
 		
-		ggraph.connectToDB(Settings.DB_CONNECTOR, Settings.DB_USER, Settings.DB_PASSWORD);
+		ggraph.connectToDB(findCorrectDatabase(eventseriesid),Settings.DB_USER,Settings.DB_PASSWORD);
+		
 		boolean init_finished = ggraph.init();
 		if( init_finished ){
 			ggraph.calculateGraph();
@@ -416,7 +424,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			break;
 		}
 		
-		ggraph.connectToDB(Settings.DB_CONNECTOR, Settings.DB_USER, Settings.DB_PASSWORD);
+		ggraph.connectToDB(findCorrectDatabase(eventseriesid),Settings.DB_USER,Settings.DB_PASSWORD);
+		
 		boolean init_finished = ggraph.init();
 		if( init_finished ){
 			ggraph.calculateGraph();
@@ -430,6 +439,69 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}else{
 			return Settings.DOMAIN_PREFIX + "ERROR";
 		}
+	}
+
+	/**
+	 * @param eventid
+	 */
+	private String findCorrectDatabase(String eventseriesid) {
+		System.out.println( "looking for correct database");
+		String resultDatabase = "";
+		boolean found = false;
+		
+		try {
+			FileInputStream fstream = new FileInputStream(Settings.PATH_TO_DATABASES);
+			DataInputStream dIn = new DataInputStream(fstream);
+			BufferedReader br = new BufferedReader(new InputStreamReader(dIn));
+			
+			String strLine;
+			Connection con = null;
+
+			while(((strLine = br.readLine())!=null && found == false)){
+				try {
+					try {
+						Class.forName("sun.jdbc.odbc.JdbcOdbcDriver"); //Or any other driver
+					}
+					catch(Exception x){
+						System.out.println( "Unable to load the driver class!");
+					}
+
+					con = DriverManager.getConnection(Settings.MYSQL_PREFIX+strLine, Settings.DB_USER, Settings.DB_PASSWORD);
+
+					if(!con.isClosed())
+						System.out.println("Successfully connected to " +
+								"MySQL server using TCP/IP...");
+
+				} catch(Exception e) {
+					System.err.println("Exception: " + e.getMessage());
+				} 
+				
+				// is this the correct database ?
+		
+				Statement teststmt = con.createStatement();
+				ResultSet testrs = teststmt.executeQuery( "SELECT text FROM eventseries WHERE id=\""+eventseriesid+"\"");
+				while( testrs.next() ){
+					//there was an entry
+					found = true;
+					resultDatabase = Settings.MYSQL_PREFIX + strLine;
+					
+					System.out.println( "found: "+resultDatabase);
+				}
+				testrs.close();
+				teststmt.close();
+				con.close();
+			}
+			
+			br.close();
+			dIn.close();
+			fstream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return resultDatabase;
 	}
 
 	/**
