@@ -273,7 +273,8 @@ class CoCitationGraph extends GephiGraph{
 						if(tpub != null && tpub2 != null){
 							tpub.addPaperThatHasBeenCitedWithThisOne(othercitedPaper);
 						}else{
-							System.out.println("Error: one publication was not found on this conference");
+							if(Settings.DEBUG)
+								System.out.println("Error: one publication was not found on this conference");
 						}
 					}
 				}
@@ -301,7 +302,10 @@ class CoCitationGraph extends GephiGraph{
 		// write nodes
 		for(String publication : setOfPublicationIDs){
 			String clearlabel = mapOfPublications.get(publication).getTitle();
-			String clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "").replaceAll("&", " and ");
+			String clearedlabel = "NULL";
+			if(clearlabel != null){
+				clearedlabel = clearlabel.replaceAll("[']|[<]|[>]", "").replaceAll("&", " and ");
+			}
 			
 			gexfGraph += "\t\t\t<node id=\""+ mapOfPublications.get(publication).getId() +"\" " +
 					"label=\""+ clearedlabel +"\" start=\""+ mapOfPublications.get(publication).getPublishedInYear() +"\"></node>\n";

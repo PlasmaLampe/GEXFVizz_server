@@ -302,8 +302,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 						String id2 = ggraph.getLabelToIDMap().get(labels[1].trim());
 						
 						String labellink = "<a href=\""+ Settings.TomcatURLToServlet +"id=" + hash + "&item=" +
-								"" + id1 +"&snatype=bc\">"+ labels[0] +"</a>" + " to <a href=\""+ Settings.TomcatURLToServlet +"id=" + 
-								hash + "&item=" + "" + id2 +"&snatype=bc\">"+ labels[1] +"</a>" + "";
+								"" + id1 +"&metric=bc\">"+ labels[0] +"</a>" + " to <a href=\""+ Settings.TomcatURLToServlet +"id=" + 
+								hash + "&item=" + "" + id2 +"&metric=bc\">"+ labels[1] +"</a>" + "";
 						
 						output += "\t<tr><td>"+ labellink +"</td>" +
 								"<td>"+temp.getKey()+"</td></tr>\n";
@@ -442,7 +442,11 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	/**
-	 * @param eventid
+	 * This method is used to find the correct MySQL database, that contains the given 
+	 * eventseriesid 
+	 * 
+	 * @param eventseriesid of the event that should be in the database
+	 * @returns jdbc.odbc path to the database
 	 */
 	private String findCorrectDatabase(String eventseriesid) {
 		System.out.println( "looking for correct database");

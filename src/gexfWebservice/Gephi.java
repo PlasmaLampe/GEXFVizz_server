@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.gephi.data.attributes.api.AttributeColumn;
 import org.gephi.data.attributes.api.AttributeController;
@@ -34,18 +35,6 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 public class Gephi{
-	/**
-	 * This methods rounds a given double value 
-	 * @param value
-	 * @return rounded double value
-	 */
-	private double roundTwoD(double value) {
-		double result = value * 100;
-		result = Math.round(result);
-		result = result / 100;
-		return result;
-	}
-	
     /**
      * This method reads the content of a given file
      * 
@@ -73,6 +62,13 @@ public class Gephi{
     	return contentOfFile.toString();
     }
     
+    /**
+     * This method creates a CircosTuple with all edges and nodes of the gexf graph
+     * @param path to the gexf graph
+     * @param metric the selected sna metric
+     * @param rank maximal amount of top entries
+     * @return the filled CircosTuple
+     */
 	CircosTuple fillCircos(String path, String metric, int rank){
 		CircosNodeList mynodes = new CircosNodeList();
 		CircosEdgeList myedges = new CircosEdgeList();
@@ -127,14 +123,21 @@ public class Gephi{
 					Node othernode = getOtherNodeOnAdjacentEdge(node, adjacentedge);
 					String spawn = gex.getStartOfID(othernode.getNodeData().getId());
 					
-					if(growthsPerYear.containsKey(spawn)){
-						int temp = growthsPerYear.get(spawn);
+					if(growthsPerYear.containsKey(spawn)){ 		// for evere node that spawns in this year
+						int temp = growthsPerYear.get(spawn); 	// increase the growthsPerYear 
 						growthsPerYear.remove(spawn);
 						growthsPerYear.put(spawn, temp+1);
 					}else{
 						growthsPerYear.put(spawn, 1);
 					}
 				}
+				
+				// add missing years as "zero entries"
+				HashSet<Integer> missingYears = gex.getSetOfMissingDates(growthsPerYear.keySet());
+				for(int myear : missingYears){
+					growthsPerYear.put(""+myear, 0);
+				}
+				
 				// create the node
 				String stringcentrality = "" + node.getNodeData().getAttributes().getValue(metricCol.getIndex());
 				Double centrality = Double.parseDouble(stringcentrality);
@@ -173,8 +176,10 @@ public class Gephi{
 	}
 
 	/**
-	 * @param path
-	 * @return
+	 * This method extracts the start and end years of a GEXF file, because this
+	 * feature is buggy within the Gephi Toolkit 
+	 * @param path to the gexf file
+	 * @return a GephiYearExtractor, which contains the start and end years of all nodes
 	 */
 	private GephiYearExtractor extractDatesFromGEXF(String path) {
 		XMLReader xmlReader = null;
@@ -198,9 +203,10 @@ public class Gephi{
 	}
 
 	/**
-	 * @param node
-	 * @param adjacentedge
-	 * @return
+	 * Returns the node, that is on the 'other side' of the edge
+	 * @param node the node, that should not be returned
+	 * @param adjacentedge the edge
+	 * @return the node, that is on the other side
 	 */
 	private Node getOtherNodeOnAdjacentEdge(Node node, Edge adjacentedge) {
 		if(adjacentedge.getTarget().getNodeData().getId().equals(node.getNodeData().getId())){
@@ -365,7 +371,7 @@ public class Gephi{
 			   double standardizedCloseness = 0;
 				// use the reciprocal of the value calculated by Gephi
 				if(centrality != 0.0)
-					standardizedCloseness = roundTwoD(1 / centrality);
+					standardizedCloseness = Tools.roundTwoD(1 / centrality);
 				
 			   cc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedCloseness, centrality));
 			}
@@ -374,7 +380,7 @@ public class Gephi{
 			for (Node n : graph.getNodes()) {
 			   Double centrality = (Double)n.getNodeData().getAttributes().getValue(betweennessColumn.getIndex());
 			   
-			   double standardizedBetweenness = roundTwoD(centrality / (((cnodes - 1) * (cnodes - 2))/2));
+			   double standardizedBetweenness = Tools.roundTwoD(centrality / (((cnodes - 1) * (cnodes - 2))/2));
 				
 			   bc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedBetweenness, centrality));
 			}
@@ -383,7 +389,7 @@ public class Gephi{
 			for (Node n : graph.getNodes()) {
 			   int centrality = (Integer)n.getNodeData().getAttributes().getValue(degreeColumn.getIndex());
 			   
-			   double standardizedDegree = roundTwoD((double) ((double) centrality / (double) (cnodes -1)));
+			   double standardizedDegree = Tools.roundTwoD((double) ((double) centrality / (double) (cnodes -1)));
 			   
 			   dc.add(new MyNode(n.getNodeData().getId(),n.getId(),standardizedDegree, centrality));
 			}

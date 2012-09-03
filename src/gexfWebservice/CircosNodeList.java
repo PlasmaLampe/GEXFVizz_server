@@ -140,6 +140,18 @@ public class CircosNodeList extends CircosList{
 		return false;
 	}
 	
+	public int maxGrowths(){
+		int max = -1;
+		for(CircosNode tempNode : nodes){
+			for(int entry : tempNode.getGrowthsPerYear().values()){
+				if(entry > max){
+					max = entry;
+				}
+			}
+		}
+		return max;
+	}
+	
 	/**
 	 * @return the colors
 	 */

@@ -172,6 +172,7 @@ public class CircosConfFile {
 		writeSnaHistogram(nodes, hashname);
 		
 		// write GrowthsPerYear (histogram)
+		this.addParameter("gpy", "max", ""+nodes.maxGrowths());
 		writeGrowthsPerYearHistogram(nodes, hashname);
 		
 		// get colors 
@@ -220,6 +221,7 @@ public class CircosConfFile {
 		for(String item : snaaxesparameter.keySet()){ // write all sna axes parameter
 			output += item + " = " + snaaxesparameter.get(item) + "\n\t\t";
 		}	
+		
 		output += "<axis>\n\t\t\t spacing = 0.1r \n\t\t</axis>\n\t\t</axes>";
 		
 		output += "\n\t</plot>";
@@ -240,7 +242,9 @@ public class CircosConfFile {
 		for(String item : snaaxesparameter.keySet()){ // write all sna axes parameter
 			output += item + " = " + snaaxesparameter.get(item) + "\n\t\t";
 		}	
-		output += "<axis>\n\t\t\t spacing = 0.1r \n\t\t</axis>\n\t\t</axes>";
+		
+		String stepsize = ""+Tools.roundTwoD(1.0d/(double)(nodes.maxGrowths()));
+		output += "<axis>\n\t\t\t spacing = "+stepsize+"r \n\t\t</axis>\n\t\t</axes>";
 		
 		output += "\n\t</plot>" + "\n</plots>\n";
 		
@@ -264,7 +268,7 @@ public class CircosConfFile {
 
 	private void writeGrowthsPerYearHistogram(CircosNodeList gpyNodes,
 			String hashname) {
-		String outpath = Settings.CIRCOS_DATA_PREFIX+"gpy"+hashname+".txt";
+		String outpath = Settings.CIRCOS_DATA_PREFIX+"gpy"+hashname+".txt"; // filename
 		addParameter("gpy", "file", outpath);
 		
 		String gpyOut = "";
@@ -279,8 +283,17 @@ public class CircosConfFile {
 			double step = Math.ceil(node.getSzMetricValue()) / count;
 			
 			for(int i = 1; i <= count; i++){
-				gpyOut += node.getID() + Settings.CIRCOS_DELIMITER + Math.round(Math.ceil((i-1) * step))  + Settings.CIRCOS_DELIMITER + 
-						Math.round(Math.ceil(i * step)) + Settings.CIRCOS_DELIMITER + node.getGrowthsPerYear().get((""+years.pollFirst())) + "\n";
+				long fromStep 		= Math.round(Math.ceil((i-1) * step));
+				long toStep 		= Math.round(Math.ceil((i) * step));
+				long forcedToStep 	= Math.round(Math.ceil((i) * step))+1;
+				
+				if(fromStep != toStep){
+					gpyOut += node.getID() + Settings.CIRCOS_DELIMITER + fromStep  + Settings.CIRCOS_DELIMITER + 
+						toStep + Settings.CIRCOS_DELIMITER + node.getGrowthsPerYear().get((""+years.pollFirst())) + "\n";
+				}else{ // force at least one step in the visuzalization
+					gpyOut += node.getID() + Settings.CIRCOS_DELIMITER + fromStep  + Settings.CIRCOS_DELIMITER + 
+							forcedToStep + Settings.CIRCOS_DELIMITER + node.getGrowthsPerYear().get((""+years.pollFirst())) + "\n";
+				}
 			}
 		}
 		createFile(outpath,gpyOut);
