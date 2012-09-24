@@ -5,6 +5,12 @@ package gexfWebservice;
 
 import java.util.HashSet;
 
+/**
+ * This small helper class stores the nodes and edges of a Circos visualization
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 public class CircosTuple {
 	private CircosEdgeList edges;
 	private CircosNodeList nodes;
@@ -46,6 +52,11 @@ public class CircosTuple {
 		this.nodes = nodes;
 	}
 	
+	/**
+	 * This method returns all id's of adjacent nodes of the given node
+	 * @param item the "main" node
+	 * @return a String HashSet with the id's of all adjacent nodes
+	 */
 	public HashSet<String> getAdjecentNodeIDs(String item){
 		HashSet<String> anodes = new HashSet<String>();
 		

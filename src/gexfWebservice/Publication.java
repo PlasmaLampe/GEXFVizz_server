@@ -3,6 +3,13 @@ package gexfWebservice;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * Each instance of this class represents a publication. This class also stores additional information that
+ * is needed to build the "co-citation" and "bibliographic coupling" graphs 
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 public class Publication{
 	private String id;
 	private ArrayList<String> cites; // publications that are cited by this one
@@ -11,10 +18,8 @@ public class Publication{
 	private String title;
 	private ArrayList<String> getCitedBy; // publication that cite this one
 	private int publishedInYear;
-	/**
-	 * @param id
-	 * @param cites
-	 */
+
+	
 	public Publication(String id, int publishedInYear, String title, ArrayList<String> cites, ArrayList<String> getCitedBy) {
 		super();
 		this.id = id;
@@ -27,6 +32,11 @@ public class Publication{
 		
 	}
 	
+	/**
+	 * This method adds a paper that has been cited together with this paper
+	 * 
+	 * @param paper the id of the paper
+	 */
 	public void addPaperThatHasBeenCitedWithThisOne(String paper){
 		if(citedTogetherWith.containsKey(paper)){
 			int count = citedTogetherWith.get(paper);
@@ -44,13 +54,19 @@ public class Publication{
 		return publishedInYear;
 	}
 
+	/**
+	 * This method adds a bibliographic coupling value to this paper
+	 * 
+	 * @param paper the id of the target paper
+	 * @param value the bibliographic coupling value
+	 */
 	public void addBibliographicCouplingTo(String paper, int value){
 		bibliograpiccoupling.put(paper, value);
 	}
 	
 	
 	/**
-	 * @return the bibliograpiccoupling
+	 * @return the bibliographic coupling
 	 */
 	public HashMap<String, Integer> getBibliograpiccoupling() {
 		return bibliograpiccoupling;

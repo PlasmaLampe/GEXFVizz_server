@@ -4,6 +4,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+/**
+ * Every instance of this class represents a node within the 
+ * Circos visualization 
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 class CircosNode implements Comparable<CircosNode>{
 	private String id;
 	private String label;
@@ -81,6 +88,12 @@ class CircosNode implements Comparable<CircosNode>{
 	}
 }
 
+/** 
+ * This class contains all nodes of the Circos visualization
+ * 
+ * @author Jörg Amelunxen
+ *  
+ */
 public class CircosNodeList extends CircosList{
 	private ArrayList<CircosNode> nodes;
 	private int maxLabelLenght;
@@ -92,15 +105,28 @@ public class CircosNodeList extends CircosList{
 		colors = new HashMap<String,String>();
 	}
 	
+	/**
+	 * This method adds a node to the node list
+	 * 
+	 * @param id the id of the node that should be added 
+	 * @param label the label of the node that should be added 
+	 * @param sna the sna value of the node that should be added 
+	 * @param sz the szientometric value of the node that should be added 
+	 * @param growthsPerYear a HashMap that contains the years as keys and the amount of added edges in this year as values 
+	 * 
+	 */
 	public void addNode(String id, String label, double sna, double sz, HashMap<String,Integer> growthsPerYear){
-		String cleanlabel = this.createID(label);
-		nodes.add(new CircosNode(id, cleanlabel, sna, sz, growthsPerYear));
+		nodes.add(new CircosNode(id, label, sna, sz, growthsPerYear));
 		
 		String color = Math.round(Math.random() * 255) + "," + 
 				Math.round(Math.random() * 255) + "," + Math.round(Math.random() * 255); 
 		colors.put(id, color);
 	}
 	
+	/**
+	 * This method deletes all nodes that are not attached to one of the given edges
+	 * @param edges the edges, which should be checked
+	 */
 	public void cleanNodeListToEdges(CircosEdgeList edges){
 		ArrayList<CircosNode> tempnodes = new ArrayList<CircosNode>();
 		HashMap<String,String> tempcolors = new HashMap<String,String>();
@@ -116,6 +142,10 @@ public class CircosNodeList extends CircosList{
 		colors = tempcolors;
 	}
 	
+	/**
+	 * This methods deletes all nodes that are not under the @param RANK szientometric values 
+	 * @param rank the amount of nodes, which should not be deleted
+	 */
 	public void cutAfterRank(int rank){
 		ArrayList<CircosNode> tempnodes = new ArrayList<CircosNode>();
 		HashMap<String,String> tempcolors = new HashMap<String,String>();
@@ -132,6 +162,11 @@ public class CircosNodeList extends CircosList{
 		}	
 	}
 	
+	/**
+	 * This method checks if the given node is contained within the nodelist
+	 * @param id of the searched node
+	 * @return true, if the node is contained in the nodelist
+	 */
 	public boolean containsNode(String id){
 		for(CircosNode check : nodes){
 			if(check.getID() == id)
@@ -140,6 +175,10 @@ public class CircosNodeList extends CircosList{
 		return false;
 	}
 	
+	/**
+	 * This method returns the maximal growths in one year of the node
+	 * @return the maximal growths
+	 */
 	public int maxGrowths(){
 		int max = -1;
 		for(CircosNode tempNode : nodes){
@@ -153,12 +192,17 @@ public class CircosNodeList extends CircosList{
 	}
 	
 	/**
-	 * @return the colors
+	 * @return the colors of the nodes
 	 */
 	public HashMap<String, String> getColors() {
 		return colors;
 	}
 
+	/**
+	 * This method returns the node with the given id
+	 * @param id the id of the node that should be returned
+	 * @return the CircosNode, if the node is not contained within the nodelist, the method returns null
+	 */
 	public CircosNode getNode(String id){
 		for(int i = 0; i < nodes.size(); i++){
 			if(nodes.get(i).getID().equals(id)){
@@ -168,6 +212,11 @@ public class CircosNodeList extends CircosList{
 		return null;
 	}
 	
+	/**
+	 * This method writes the node file
+	 * 
+	 * @param hashname is used to build the filename
+	 */
 	@Override
 	public void writeFile(String hashname) {
 		for(CircosNode node : nodes){
@@ -181,15 +230,30 @@ public class CircosNodeList extends CircosList{
 					Settings.CIRCOS_DELIMITER + "0" + Settings.CIRCOS_DELIMITER + Math.round(node.getSzMetricValue()) + 
 					Settings.CIRCOS_DELIMITER + node.getID() + "\n";
 		}
-		createFile(Settings.CIRCOS_DATA_PREFIX+"node"+hashname+".txt", output);
+		Tools.createFile(Settings.CIRCOS_DATA_PREFIX+"node"+hashname+".txt", output);
 	}
 
+	/**
+	 * This method writes the node file without whitespaces. This file will be used to run the orderchr script of Circos
+	 * 
+	 * @param hashname is used to build the filename
+	 */
+	public void writeFileForCircosOrder(String hashname) {
+		String dummyOut = "";
+		for(CircosNode node : nodes){
+			String useThisLabel = "dummyLabel";
+			
+			dummyOut += "chr" + Settings.CIRCOS_DELIMITER + "-" + Settings.CIRCOS_DELIMITER + node.getID() + Settings.CIRCOS_DELIMITER + useThisLabel + 
+					Settings.CIRCOS_DELIMITER + "0" + Settings.CIRCOS_DELIMITER + Math.round(node.getSzMetricValue()) + 
+					Settings.CIRCOS_DELIMITER + node.getID() + "\n";
+		}
+		Tools.createFile(Settings.CIRCOS_DATA_PREFIX+"nodeForCircosOrder"+hashname+".txt", dummyOut);
+	}
+	
 	/**
 	 * @return the nodes
 	 */
 	public ArrayList<CircosNode> getNodes() {
 		return nodes;
 	}
-	
-	
 }

@@ -1,12 +1,8 @@
 package gexfWebservice;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.rmi.RMISecurityManager;
@@ -26,6 +22,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+/**
+ * This is the main server of the web application
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 public class Server extends UnicastRemoteObject implements ServerInterface {
 	private static String lastFileContent = "";
 	private static String lastHashValue = "";
@@ -36,50 +38,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		super();
 		System.out.println("Server created...");
 	}
-	
-    /**
-     * The method creates the specified file with the given content
-     * 
-     * @param path to the file, that is going to be created
-     * @param content the content of the file
-     */
-    private void createFile(String path, String content){
-		try{
-			FileWriter fstream = new FileWriter(path);
-			BufferedWriter out = new BufferedWriter(fstream);
-			out.write(content);
-			out.close();
-		}catch (Exception e){
-			e.printStackTrace();
-		}
-    }
-    
-    /**
-     * This method reads the content of a given file
-     * 
-     * @param path the path to the file
-     * @return the content of the file as a String
-     */
-    private String getContent(String path){
-    	File tempfile = new File(path);
-    	String contentOfFile ="";
-
-    	try {
-    		BufferedReader input =  new BufferedReader(new FileReader(tempfile));
-    		try {
-    			String line = null; 
-    			while (( line = input.readLine()) != null){
-    				contentOfFile += line;
-    			}
-    		}finally {
-    			input.close();
-    		}
-    	}catch (Exception e){
-    		e.printStackTrace();
-    	}
-
-    	return contentOfFile.toString();
-    }
     
     /**
      * The method hashes the content of the given file and 
@@ -89,7 +47,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
      * @return the SHA256 hash
      */
     private String hashCodeSHA256(String path){
-    	String content = getContent(path);
+    	String content = Tools.getContent(path);
     	
     	if(content.equals(lastFileContent)){ // shortcut, maybe we know the output already ;-)
     		return lastHashValue;
@@ -155,37 +113,19 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     	return sb.toString();
     }
 
-    /**
-     * The methods checks if a given file exists. 
-     * If the file does not exist, the method creates it and
-     * inserts the content of the given file
-     *  
-     * @param path the file that has to be checked
-     * @param content if the file has to be created, use
-     * this string as content for the file
-     */
-    private void doesFileExist(String path, String stringcontent){
-    	File f = new File(path);
-    	if(f.exists()) {
-    		/* do nothing, the file has already been hashed and saved */ 
-    	}else{
-    		createFile(path,stringcontent);
-    	}
-    }
-
 	/**
-	 * The method returns the path to the circos image, which is a local represantation of 'item' in
+	 * The method returns the path to the circos image, which is a local representation of 'item' in
 	 * the graph that is specified in 'path' 
 	 * 
 	 * @param path the path to the gexf file that should be used
-	 * @param item the item which is the central part of this circos visualization
+	 * @param item the item that is the central part of this circos visualization
 	 * @param metric the used metric for the circos ideogram (eg. "cc","dc","bc")
 	 * @return a string that contains the path to the image 
 	 */
 	public String getLocalCircos(String path, String item, String metric) throws RemoteException {
 		String hashname = hashCodeSHA256(path);
 		
-		CircosConfFile circconf = new CircosConfFile();
+		CircosConfFile circconf = new CircosConfFile(false);
 		Gephi gep = new Gephi();
 		
 		CircosTuple tuple = gep.fillCircos(path, metric, 100000);
@@ -253,10 +193,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	/**
-	 * This method returns an XML String which contains all sna metrics of the given gexf file
+	 * This method returns an XML String that contains all SNA metrics of the given gexf file
 	 * 
 	 * @param path The path to the gexf file, which should be used to calculate the metrics
-	 * @return a xml string that contains all metrics
+	 * @return a XML string that contains all metrics
 	 */
 	public String getMetrics(String path) throws RemoteException {
 		Gephi gephi = new Gephi();
@@ -266,7 +206,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	/**
-	 * This method returns the top 'rank' bibliographic coupling edges of the graph, that is specified by 
+	 * This method returns the top 'rank' bibliographic coupling edges of the graph that is specified by 
 	 * the given parameters
 	 * 
 	 * @param eventid of graph that should be used to generate the edges
@@ -274,7 +214,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @param syear the start year
 	 * @param eyear the end year
 	 * @param rank the number of edges that should be generated
-	 * @return a string that contains a html table with the edges
+	 * @return a string that contains a HTML table with the edges
 	 */
 	public String getBCEdges(String eventid,String eventseriesid,String syear,String eyear, int rank) throws RemoteException {
 		BibliographicCouplingGraph ggraph = new BibliographicCouplingGraph(eventid, eventseriesid, syear, eyear);
@@ -325,8 +265,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 	
 	/**
-	 * The method returns a string of the format "nodes#edges", that contains the number of nodes and the number of edges
-	 * of the graph, that is specified in the gexf file, which can be found at 'path'
+	 * The method returns a string of the format "nodes#edges", which contains the number of nodes and the number of edges
+	 * of the graph that is specified in the gexf file that can be found at 'path'
 	 * 
 	 * @param path to the gexf file
 	 * @return a string that contains the number of nodes and edges of the graph
@@ -340,8 +280,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	/**
-	 * The method returns a double value which describes the density
-	 * of the graph, that is specified in the gexf file, which can be found at 'path'
+	 * The method returns a double value that describes the density
+	 * of the graph, which is specified in the gexf file that can be found at 'path'
 	 * 
 	 * @param path to the gexf file
 	 * @return a double value that contains the density of the graph
@@ -353,8 +293,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
 	/**
 	 * The method returns the path to the circos image, which is representation of
-	 * the graph that is specified in 'filename'. In addition to that the ideogram size is filled
-	 * with the metric, that is specified in the parameter 'metric'. Furthermore, the 
+	 * the graph that is specified in 'filename'. In addition to that, the ideogram size is filled
+	 * with the metric that is specified in the parameter 'metric'. Furthermore, the 
 	 * parameter rank specifies the number of items that should be used in the circos graph
 	 * 
 	 * @param filename the path to the gexf file that should be used
@@ -362,10 +302,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @param rank specifies the number of items that should be used
 	 * @return a string that contains the path to the image 
 	 */
-	public String getCircosPath(String filename, String metric, int rank) throws RemoteException {
+	public String getCircosPath(String filename, String metric, int rank, boolean preview) throws RemoteException {
 		String hashname = hashCodeSHA256(filename);
 		
-		CircosConfFile circconf = new CircosConfFile();
+		CircosConfFile circconf = new CircosConfFile(preview);
 		Gephi gep = new Gephi();
 		CircosTuple tuple = gep.fillCircos(filename, metric, rank);
 		CircosEdgeList circedges = tuple.getEdges();
@@ -378,8 +318,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		circconf.writeFile(hashname);
 		
 		String runCommand = Settings.CIRCOS_BIN_PREFIX+"circos -conf "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt";
-		//String resizeCommand = "convert "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+metric+"_"+rank+".png" +
-		//		" resize 20% "+Settings.CIRCOS_GFX_PREFIX+hashname+"_"+metric+"_"+rank+"_small.png";
 		String zipCommand = "zip "+ Settings.CIRCOS_DATA_PREFIX+hashname +" "+Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt " + Settings.CIRCOS_DATA_PREFIX+"edge"+hashname+".txt " + 
 				Settings.CIRCOS_DATA_PREFIX+"node"+hashname+".txt " + Settings.CIRCOS_DATA_PREFIX+"ideogram.conf " + 
 				Settings.CIRCOS_DATA_PREFIX+"ticks.conf "+ Settings.CIRCOS_DATA_PREFIX+"sna"+hashname+".txt "+
@@ -393,7 +331,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				System.out.println(line);
 			}
 			
-			//Runtime.getRuntime().exec(resizeCommand);
 			Runtime.getRuntime().exec(zipCommand);
 			
 		} catch (IOException e) {
@@ -403,7 +340,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	/**
-	 * This method returns a path to a gexf file, that has been generated according to the given parameters
+	 * This method returns a path to a gexf file that has been generated according to the given parameters
 	 * 
 	 * @param type the type of the graph that should be generated ("cc" for co-citation / "bc" for bibliographic coupling)
 	 * @param eventid of graph that should be used to generate the edges
@@ -433,7 +370,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			String hashname = hashStringSHA256(graph);
 			
 			String filename = Settings.APACHE_PATH + "hash/" + hashname + ".gexf";
-			doesFileExist(filename, graph);
+			Tools.doesFileExist(filename, graph);
 			ggraph.close();
 			return Settings.DOMAIN_PREFIX + hashname;
 		}else{
@@ -442,7 +379,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 
 	/**
-	 * This method is used to find the correct MySQL database, that contains the given 
+	 * This method is used to find the correct MySQL database that contains the given 
 	 * eventseriesid 
 	 * 
 	 * @param eventseriesid of the event that should be in the database
@@ -481,7 +418,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				} 
 				
 				// is this the correct database ?
-		
 				Statement teststmt = con.createStatement();
 				ResultSet testrs = teststmt.executeQuery( "SELECT text FROM eventseries WHERE id=\""+eventseriesid+"\"");
 				while( testrs.next() ){
@@ -511,7 +447,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	/**
 	 * This method returns a path to a .gephi project file
 	 * 
-	 * @param hashPath the path to the gexf file, that should be included in this project
+	 * @param hashPath the path to the gexf file that should be included in this project
 	 * @return a string that contains the path to the .gephi file
 	 */
 	public String getPathToProject(String hashPath) throws RemoteException {

@@ -1,14 +1,22 @@
 package gexfWebservice;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.TreeSet;
 
+/**
+ * This class represents the Circos main configuration file
+ *  
+ * @author Jörg Amelunxen
+ *
+ */
 public class CircosConfFile {
 	private String karyotype;
 	private CircosEdgeList edges;
 	private CircosNodeList nodes;
+	private boolean preview;
 	
 	private HashMap<String,String> linkparameter;
 	private HashMap<String,String> imageparameter;
@@ -21,22 +29,6 @@ public class CircosConfFile {
 	private HashMap<String, String> snabackgroundtparameter;
 	private HashMap<String, String> snaaxesparameter;
 	private HashMap<String, String> gpyparameter;
-	
-    /**
-     * The method creates the specified file with the given content
-     * @param path to the file, that is going to be created
-     * @param content the content of the file
-     */
-    private void createFile(String path, String content){
-		try{
-			FileWriter fstream = new FileWriter(path);
-			BufferedWriter out = new BufferedWriter(fstream);
-			out.write(content);
-			out.close();
-		}catch (Exception e){
-			e.printStackTrace();
-		}
-    }
     
     /**
      * This methods adds a parameter with the given value to the named target map
@@ -81,8 +73,9 @@ public class CircosConfFile {
     	}
     }
     
-	CircosConfFile(){
+	CircosConfFile(boolean preview){
 		karyotype = "";
+		this.preview = preview;
 		
 		linkparameter = new HashMap<String,String>();
 		snaplotparameter = new HashMap<String,String>();
@@ -163,10 +156,48 @@ public class CircosConfFile {
 		this.nodes = nodes;
 	}
 
+	/**
+	 * This methods writes the Circos configuration file(-s) to the path
+	 * specified within the Settings class
+	 * @param hashname will be used to build the filenames
+	 */
 	public void writeFile(String hashname){	
 		// write node and edge file
 		nodes.writeFile(hashname);
 		edges.writeFile(hashname);
+		
+		// run orderChr script
+		String outputOrder="";
+		
+		if(!preview){
+			nodes.writeFileForCircosOrder(hashname);
+			
+			if(Settings.DEBUG){
+				System.out.println("running Circos order script ...");
+			}
+			
+			try {
+				String runCommand = Settings.CIRCOS_DATA_ORDERCHR+"bin/orderchr -links "+Settings.CIRCOS_DATA_PREFIX+"edge"+hashname+".txt"+
+						" -karyotype "+Settings.CIRCOS_DATA_PREFIX+"nodeForCircosOrder"+hashname+".txt";
+				
+				Process p = Runtime.getRuntime().exec(runCommand);
+				InputStreamReader instream = new InputStreamReader(p.getInputStream());
+				BufferedReader in = new BufferedReader(instream);
+				String line = null;
+				while((line = in.readLine()) != null){
+					System.out.println(line);
+					
+					if(line.startsWith("chromosomes_order"))
+						outputOrder+=line;
+				}		
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			if(Settings.DEBUG){
+				System.out.println("order: "+outputOrder);
+			}
+		}
 		
 		// write sna (histogram)
 		writeSnaHistogram(nodes, hashname);
@@ -184,7 +215,8 @@ public class CircosConfFile {
 		
 		// write configuration file
 		output = "file_delim = " + Settings.CIRCOS_PRINT_DELIMITER + "\n";
-		output += "karyotype = " + karyotype + "\n<colors>\n\t\t";
+		output += "karyotype = " + karyotype + "\n";
+		output += outputOrder+"\n<colors>\n\t\t";
 		
 		for(String item : colors.keySet()){ // write all link parameter
 			output += item + " = " + colors.get(item) + "\n\t\t";
@@ -249,11 +281,11 @@ public class CircosConfFile {
 		output += "\n\t</plot>" + "\n</plots>\n";
 		
 		if(useIdeogram){
-			output += "<<include data/ideogram.conf>>\n";
+			output += "<<include "+Settings.CIRCOS_BIN_PREFIX+"data/ideogram.conf>>\n";
 		}
 		
 		if(useTicks){
-			output += "<<include data/ticks.conf>>\n";
+			output += "<<include "+Settings.CIRCOS_BIN_PREFIX+"data/ticks.conf>>\n";
 		}
 		
 		output += "<image>\n\t";
@@ -261,11 +293,20 @@ public class CircosConfFile {
 			output += item + " = " + imageparameter.get(item) + "\n\t";
 		}			
 		output += "\n</image>\n" +
-				"\n<<include etc/colors_fonts_patterns.conf>>\n<<include etc/housekeeping.conf>>\n<<include etc/colors.conf>>";
+				"\n<<include "+Settings.CIRCOS_BIN_PREFIX+"etc/colors_fonts_patterns.conf>>\n" +
+						"<<include "+Settings.CIRCOS_BIN_PREFIX+"etc/housekeeping.conf>>\n" +
+								"<<include "+Settings.CIRCOS_BIN_PREFIX+"etc/colors.conf>>";
 		
-		createFile(Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt", output);
+		Tools.createFile(Settings.CIRCOS_DATA_PREFIX+"conf"+hashname+".txt", output);
 	}
 
+	/**
+	 * This method will be used to write the configuration file for the growth per year circle of
+	 * the visualization 
+	 *  
+	 * @param gpyNodes all nodes of the diagram
+	 * @param hashname will be used to build the filename
+	 */
 	private void writeGrowthsPerYearHistogram(CircosNodeList gpyNodes,
 			String hashname) {
 		String outpath = Settings.CIRCOS_DATA_PREFIX+"gpy"+hashname+".txt"; // filename
@@ -296,9 +337,16 @@ public class CircosConfFile {
 				}
 			}
 		}
-		createFile(outpath,gpyOut);
+		Tools.createFile(outpath,gpyOut);
 	}
 
+	/**
+	 * This method will be used to write the configuration file for the SNA circle of
+	 * the visualization 
+	 * 
+	 * @param snaNodes all nodes of the visualization
+	 * @param hashname will be used to build the filename
+	 */
 	private void writeSnaHistogram(CircosNodeList snaNodes, String hashname) {
 		String outpath = Settings.CIRCOS_DATA_PREFIX+"sna"+hashname+".txt";
 		addParameter("sna", "file", outpath);
@@ -314,6 +362,6 @@ public class CircosConfFile {
 		}
 		
 		addParameter("sna", "max", ""+Math.round(maxSNA));
-		createFile(outpath,snaOut);
-	}		
+		Tools.createFile(outpath,snaOut);
+	}	
 }

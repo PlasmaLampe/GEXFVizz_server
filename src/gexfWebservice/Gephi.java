@@ -34,6 +34,12 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
+/**
+ * This class handles the communication the the Gephi Toolkit
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 public class Gephi{
     /**
      * This method reads the content of a given file
@@ -65,7 +71,7 @@ public class Gephi{
     /**
      * This method creates a CircosTuple with all edges and nodes of the gexf graph
      * @param path to the gexf graph
-     * @param metric the selected sna metric
+     * @param metric the selected SNA metric
      * @param rank maximal amount of top entries
      * @return the filled CircosTuple
      */
@@ -246,9 +252,10 @@ public class Gephi{
 	}
 
 	/**
-	 * @param path
-	 * @param importController
-	 * @return
+	 * This method is used for loading a GEXF file
+	 * @param path to the file that should be loaded
+	 * @param importController a ImpotController of the Gephi Toolkit
+	 * @return the container that contains the graph of the given GEXF file
 	 */
 	private Container importFileToContainer(String path, ImportController importController) {
 		Container container;
@@ -420,9 +427,11 @@ public class Gephi{
 	}
 
 	/**
-	 * @param graph
-	 * @param dc
-	 * @return
+	 * This method prints the nodes of the graph to an XML String with additional information
+	 * 
+	 * @param graph that should be printed
+	 * @param dc contains an ArrayList of MyNodes that are needed to get the additional information (for example szientometric values)
+	 * @return an XML String
 	 */
 	private String printToXML(UndirectedGraph graph, ArrayList<MyNode> dc) {
 		String tempout = "";
@@ -446,6 +455,12 @@ public class Gephi{
 
 	}
 
+	/**
+	 * This method stores the gephi project file at the path specified in the Settings file
+	 * 
+	 * @param hashPath is the hashname of the file and is used to build the filename
+	 * @return the URL to the project file 
+	 */
 	public String getProject(String hashPath) {
 		//Init a project
 		ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);

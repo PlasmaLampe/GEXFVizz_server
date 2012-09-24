@@ -11,7 +11,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
 
-
+/**
+ * This parent class is used to simplify the child classes "CoCitationGraph" and "BibliographicCouplingGraph"
+ * @author Jörg Amelunxen
+ *
+ */
 public class GephiGraph {
 	protected Connection con;
 	protected HashMap<String, Publication> mapOfPublications;
@@ -35,6 +39,11 @@ public class GephiGraph {
 		this.eyear = eyear;
 	}
 
+	/**
+	 * This class returns a boolean value that indicates of the given String is a number
+	 * @param str that should be checked
+	 * @return true, if the given String is number
+	 */
 	protected boolean isNumb(String str){
 		String s=str;
 		for (int i = 0; i < s.length(); i++) {
@@ -248,6 +257,11 @@ public class GephiGraph {
 	}
 }
 
+/**
+ * This class contains a "co-citation" graph
+ * 
+ * @author Jörg Amelunxen
+ */
 class CoCitationGraph extends GephiGraph{
 	
 	public CoCitationGraph(String eventid, String eventseriesid, String syear,
@@ -255,12 +269,18 @@ class CoCitationGraph extends GephiGraph{
 		super(eventid, eventseriesid, syear, eyear);
 	}
 
+	/**
+	 * This method calculates the graph by running the algorithm to build up the 
+	 * co-citation graph
+	 * 
+	 * When the calculation is done one can get the graph with the internal variable gexfGraph
+	 */
 	@Override
 	public void calculateGraph() {
 		super.calculateGraph();
 		
 		// generate Co-Citation:
-		// algorithm says to paper that are cited by this one, that they are
+		// algorithm says to paper that are cited by this one that they are
 		// cited together by this one ... ;-)
 		for(String pub : setOfPublicationIDs){
 			ArrayList<String> cites = mapOfPublications.get(pub).getCites();
@@ -330,8 +350,13 @@ class CoCitationGraph extends GephiGraph{
 	}	
 }
 
+/**
+ * This class contains a "bibliographic coupling" graph
+ * 
+ * @author Jörg Amelunxen
+ */
 class BibliographicCouplingGraph extends GephiGraph{
-	private TreeMap<Integer, ArrayList<String>> bib_coup_count; // this car is needed for the tabular visulization of the edges
+	private TreeMap<Integer, ArrayList<String>> bib_coup_count; // this variable is needed for the tabular visualization of the edges
 	private HashMap<String,String> labelToIDMap;
 	public BibliographicCouplingGraph(String eventid, String eventseriesid, String syear,
 			String eyear) {
@@ -341,6 +366,13 @@ class BibliographicCouplingGraph extends GephiGraph{
 		labelToIDMap = new HashMap<String,String>();
 	}
 
+	/**
+	 * This method adds an entry to the bibliographic coupling map
+	 * 
+	 * @param fromName the id of the source node
+	 * @param toName the id of the target node
+	 * @param value the bibliographic coupling value
+	 */
 	public void addEntryToBibCoup(String fromName, String toName, int value){
 		if(!bib_coup_count.containsKey(value)){
 			bib_coup_count.put(value, new ArrayList<String>());
@@ -363,6 +395,12 @@ class BibliographicCouplingGraph extends GephiGraph{
 		return labelToIDMap;
 	}
 
+	/**
+	 * This method calculates the graph by running the algorithm to build up the 
+	 * bibliographic coupling graph
+	 * 
+	 * When the calculation is done one can get the graph with the internal variable gexfGraph
+	 */
 	@Override
 	public void calculateGraph() {
 		super.calculateGraph();

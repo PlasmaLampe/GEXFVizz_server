@@ -1,5 +1,12 @@
 package gexfWebservice;
 
+/**
+ * Each instance of this class represents a node within the graph (will all 
+ * information, like SNA value, etc.) 
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 public class MyNode{
 	private String id;			// 'real id' of the graph file
 	private int systemID;	// this id is gephi specific and is needed for computations

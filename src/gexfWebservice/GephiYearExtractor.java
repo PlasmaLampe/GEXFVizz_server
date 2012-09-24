@@ -10,6 +10,14 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
+/**
+ * This class is needed to acquire the date information of the GEXF file.
+ * This feature is implemented in the Gephi Toolkit, but was hardly usable. Thus,
+ * we had to implement our own "YearExtractor" 
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 public class GephiYearExtractor implements ContentHandler {
 	private class YearTuple{
 		private String start;
@@ -43,10 +51,20 @@ public class GephiYearExtractor implements ContentHandler {
 	private int globalStart;
 	private int globalEnd;
 	
+	/** 
+	 * This method returns the start/spawn date of the given node
+	 * @param id of the node that should be checked
+	 * @return the start date
+	 */
 	String getStartOfID(String id){
 		return dates.get(id).getStart();
 	}
 	
+	/** 
+	 * This method returns the end/de-spawn date of the given node
+	 * @param id of the node that should be checked
+	 * @return the end date
+	 */
 	String getEndOfID(String id){
 		return dates.get(id).getEnd();
 	}
@@ -106,19 +124,11 @@ public class GephiYearExtractor implements ContentHandler {
 		}
 	}
 	
-	/*
-	private HashSet<Integer> getSetOfAllPossibleDates(){
-		HashSet<Integer> result = new HashSet<Integer>();
-		
-		int frame = globalEnd - globalStart;
-		
-		for(int i = globalStart; i <= globalStart + frame; i++){
-			result.add(i);
-		}
-		
-		return result;
-	}*/
-	
+	/**
+	 * This method returns a set of integer values that contain all years within the global timeframe, which are currently missing
+	 * @param datesSet of all currently used years (edges ...)
+	 * @return an integer HashSet of all missing years
+	 */
 	public HashSet<Integer> getSetOfMissingDates(Set<String> datesSet){
 		HashSet<Integer> result = new HashSet<Integer>();
 		
@@ -135,8 +145,10 @@ public class GephiYearExtractor implements ContentHandler {
 	}
 	
 	/**
-	 * @param start
-	 * @param end
+	 * This method updates the global years
+	 * 
+	 * @param start year of the current node
+	 * @param end year of the current node
 	 */
 	private void updateGlobalDates(String start, String end) {
 		if(start != null){
@@ -157,8 +169,10 @@ public class GephiYearExtractor implements ContentHandler {
 	}
 
 	/**
-	 * @param start
-	 * @param end
+	 * This method initializes the global years
+	 * 
+	 * @param start year of the current node
+	 * @param end year of the current node
 	 */
 	private void initGlobalDates(String start, String end) {
 		if(globalStart == -1 && start != null){

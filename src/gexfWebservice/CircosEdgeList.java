@@ -3,6 +3,13 @@ package gexfWebservice;
 import java.util.ArrayList;
 import java.util.Set;
 
+/**
+ * Every instance of this class represents a link within the 
+ * Circos visualization 
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 class CircosEdge{
 	private String id;
 	private String from;
@@ -29,14 +36,14 @@ class CircosEdge{
 	}
 
 	/**
-	 * @return the from
+	 * @return the id of the source node
 	 */
 	public String getFrom() {
 		return from;
 	}
 
 	/**
-	 * @return the to
+	 * @return the the id of the target node
 	 */
 	public String getTo() {
 		return to;
@@ -50,23 +57,34 @@ class CircosEdge{
 	}
 
 	/**
-	 * @return the offset of the start node
+	 * @return the offset of the source node
 	 */
 	public double getOffsetStartNode() {
 		return offsetStart;
 	}
 	
 	/**
-	 * @return the offset of the end node
+	 * @return the offset of the target node
 	 */
 	public double getOffsetEndNode() {
 		return offsetEnd;
 	}
 }
 
+/**
+ * This class contains all edges of the visualization
+ * 
+ * @author Jörg Amelunxen
+ *
+ */
 public class CircosEdgeList extends CircosList{
 	private ArrayList<CircosEdge> edges;
 	
+	/**
+	 * Delete every edge that is not attached to one of the given nodes
+	 * 
+	 * @param nodes This nodelist contains all nodes that should be checked
+	 */
 	public void cleanEdgeList(CircosNodeList nodes){
 		ArrayList<CircosEdge> cleanedList = new ArrayList<CircosEdge>();
 		
@@ -82,6 +100,11 @@ public class CircosEdgeList extends CircosList{
 		edges = cleanedList;
 	}
 	
+	/**
+	 * Delete every edge that is not attached to the given node
+	 * 
+	 * @param nodes This id is the id of the node that should be checked
+	 */
 	public void cleanEdgeListToOnlyEdgesFromOneNode(String nodeID){
 		ArrayList<CircosEdge> cleanedList = new ArrayList<CircosEdge>();
 		
@@ -97,6 +120,12 @@ public class CircosEdgeList extends CircosList{
 		edges = cleanedList; 
 	}
 	
+	/**
+	 * Delete every edge that is not attached to the given node or attached to two adjacent nodes
+	 * 
+	 * @param nodeID the id of the "main" node
+	 * @param adjacentNodes a set with id's of all adjacent nodes
+	 */
 	public void cleanEdgeListToOnlyEdgesFromOneNodeOrBetweenTwoAdjacentNodes(String nodeID, Set<String> adjacentNodes){
 		ArrayList<CircosEdge> cleanedList = new ArrayList<CircosEdge>();
 		
@@ -115,6 +144,13 @@ public class CircosEdgeList extends CircosList{
 		edges = cleanedList; 
 	}
 	
+	/**
+	 * Checks if the id of a node is used on an edge within the visualization 
+	 * as source or target node
+	 * 
+	 * @param NodeID the id of the node
+	 * @return true, if the id is used on an edge
+	 */
 	public boolean containsNodeAsSourceOrTarget(String NodeID){
 		boolean containsNode = false;
 		
@@ -132,12 +168,19 @@ public class CircosEdgeList extends CircosList{
 		edges = new ArrayList<CircosEdge>();
 	}
 	
+	/**
+	 * this methods adds an edge to the edgelist
+	 * 
+	 * @param from the id of the source node
+	 * @param to the id of the target node
+	 * @param weight the weight of the edge
+	 * @param offsetStartNode the offset of the edge at the karyotype at the source node
+	 * @param OffsetEndNode the offset of the edge at the karyotype at the target node
+	 */
 	public void addEdge(String from, String to, float weight, double offsetStartNode, double OffsetEndNode){
 		edges.add(new CircosEdge(from+"#"+to, from, to, weight, offsetStartNode, OffsetEndNode));
 	}
 
-	
-	
 	/**
 	 * @return the edges
 	 */
@@ -145,6 +188,11 @@ public class CircosEdgeList extends CircosList{
 		return edges;
 	}
 
+	/**
+	 * This method writes the configuration file
+	 * 
+	 * @param hashname is used to build the filename
+	 */
 	@Override
 	public void writeFile(String hashname) {
 		int count = 0;
@@ -156,6 +204,6 @@ public class CircosEdgeList extends CircosList{
 			count++;
 		}
 		
-		createFile(Settings.CIRCOS_DATA_PREFIX+"edge"+hashname+".txt", output);
+		Tools.createFile(Settings.CIRCOS_DATA_PREFIX+"edge"+hashname+".txt", output);
 	}
 }
