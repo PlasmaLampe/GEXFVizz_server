@@ -79,7 +79,7 @@ public class Tests {
 		}
 	}
 	
-	@Test public void TestgetNodesAndEdges(){
+	@Test public void getNodesAndEdgesTest(){
 		try{
 			Server serv = new Server();
 			String result = serv.getNodesAndEdges(Settings.TESTPATH + "bc_test_ectel0612.gexf");
@@ -90,7 +90,7 @@ public class Tests {
 		}
 	}
 	
-	@Test public void TestgetDensity(){
+	@Test public void getDensityTest(){
 		try{
 			Server serv = new Server();
 			Double result = serv.getDensity(Settings.TESTPATH + "bc_test_ectel0612.gexf");

@@ -1,8 +1,6 @@
 package gexfWebservice;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -41,33 +39,6 @@ import org.xml.sax.helpers.XMLReaderFactory;
  *
  */
 public class Gephi{
-    /**
-     * This method reads the content of a given file
-     * 
-     * @param path the path to the file
-     * @return the content of the file as a String
-     */
-    private String getContent(String path){
-    	File tempfile = new File(path);
-    	String contentOfFile ="";
-
-    	try {
-    		BufferedReader input =  new BufferedReader(new FileReader(tempfile));
-    		try {
-    			String line = null; 
-    			while (( line = input.readLine()) != null){
-    				contentOfFile += line;
-    			}
-    		}finally {
-    			input.close();
-    		}
-    	}catch (Exception e){
-    		e.printStackTrace();
-    	}
-
-    	return contentOfFile.toString();
-    }
-    
     /**
      * This method creates a CircosTuple with all edges and nodes of the gexf graph
      * @param path to the gexf graph
@@ -129,7 +100,7 @@ public class Gephi{
 					Node othernode = getOtherNodeOnAdjacentEdge(node, adjacentedge);
 					String spawn = gex.getStartOfID(othernode.getNodeData().getId());
 					
-					if(growthsPerYear.containsKey(spawn)){ 		// for evere node that spawns in this year
+					if(growthsPerYear.containsKey(spawn)){ 		// for every node that spawns in this year
 						int temp = growthsPerYear.get(spawn); 	// increase the growthsPerYear 
 						growthsPerYear.remove(spawn);
 						growthsPerYear.put(spawn, temp+1);
@@ -195,7 +166,7 @@ public class Gephi{
 		} catch (SAXException e) {
 			e.printStackTrace();
 		}
-		String xml = getContent(path);
+		String xml = Tools.getContent(path);
 		InputSource inputSource = new InputSource(new StringReader(xml));
 		xmlReader.setContentHandler(gex);
 		try {
