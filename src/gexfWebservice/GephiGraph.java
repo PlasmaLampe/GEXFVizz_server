@@ -460,7 +460,7 @@ class BibliographicCouplingGraph extends GephiGraph{
 					"label=\""+ clearedlabel +"\" start=\""+ mapOfPublications.get(publication).getPublishedInYear() +"\"></node>\n";
 			
 			// store label <-> id
-			this.labelToIDMap.put(clearedlabel, publication);
+			this.labelToIDMap.put(clearlabel, publication);
 		}		
 		
 		// write edges

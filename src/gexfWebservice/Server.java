@@ -131,6 +131,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		CircosTuple tuple = gep.fillCircos(path, metric, 100000);
 		Set<String> anodes = tuple.getAdjecentNodeIDs(item);
 		
+		gep = null;
+		
 		// clean nodes and edges
 		tuple.getEdges().cleanEdgeListToOnlyEdgesFromOneNodeOrBetweenTwoAdjacentNodes(item, anodes);
 		tuple.getNodes().cleanNodeListToEdges(tuple.getEdges());
@@ -201,6 +203,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	public String getMetrics(String path) throws RemoteException {
 		Gephi gephi = new Gephi();
 		String result = gephi.getMetrics(path);
+		gephi = null;
 		
 		return result;
 	}
@@ -275,6 +278,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		Gephi gephi = new Gephi();
 		int nodes = gephi.getNodes(path);
 		int edges = gephi.getEdges(path);
+		gephi = null;
 		
 		return nodes+"#"+edges;
 	}
@@ -288,7 +292,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 */
 	public double getDensity(String path) throws RemoteException {
 		Gephi gephi = new Gephi();
-		return gephi.getDensity(path);
+		double returnvalue = gephi.getDensity(path);
+		gephi = null;
+		
+		return returnvalue;
 	}
 
 	/**
@@ -308,6 +315,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		CircosConfFile circconf = new CircosConfFile(preview);
 		Gephi gep = new Gephi();
 		CircosTuple tuple = gep.fillCircos(filename, metric, rank);
+		gep=null;
+		
 		CircosEdgeList circedges = tuple.getEdges();
 		CircosNodeList circnodes = tuple.getNodes();
 		
@@ -452,6 +461,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 */
 	public String getPathToProject(String hashPath) throws RemoteException {
 		Gephi gephi = new Gephi();	
-		return gephi.getProject(hashPath);
+		String returnvalue = gephi.getProject(hashPath);
+		gephi = null;
+		
+		return returnvalue;
 	}
 }

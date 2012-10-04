@@ -143,6 +143,8 @@ public class Gephi{
 
 			CircosTuple tuple = new CircosTuple(myedges, mynodes);
 
+			container = null;
+			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
 
@@ -213,6 +215,8 @@ public class Gephi{
 			importController.process(container, new DefaultProcessor(), workspace);
 			DirectedGraph graph = graphModel.getDirectedGraph();
 			
+			container = null;
+			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
 			
@@ -260,6 +264,8 @@ public class Gephi{
 			importController.process(container, new DefaultProcessor(), workspace);
 			DirectedGraph graph = graphModel.getDirectedGraph();
 			
+			container = null;
+			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
 			
@@ -293,6 +299,8 @@ public class Gephi{
 			dens.setDirected(false);
 			dens.execute(graphModel, attributeModel);	
 			
+			container = null;
+			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
 			
@@ -388,6 +396,8 @@ public class Gephi{
 			output += printToXML(graph, dc);
 			output +="\t</degreeCentrality>\n</top>";
 			
+			container = null;
+			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
 			
@@ -447,6 +457,9 @@ public class Gephi{
 			String projectpath = Settings.APACHE_PATH + "data/" + name + ".gephi";
 			Runnable run = pc.saveProject(pc.getCurrentProject(), new File(projectpath));
 			run.run();
+			
+			container = null;
+			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
 			
