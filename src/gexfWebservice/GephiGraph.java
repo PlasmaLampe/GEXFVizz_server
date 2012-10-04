@@ -70,7 +70,7 @@ public class GephiGraph {
 			if(eventseriesid == null){
 				// get a specific eventid
 				rs = stmt.executeQuery( "SELECT publication_id FROM pub_evt WHERE event_id =\""+eventid+"\"");
-			}else if(eventseriesid != null && syear == null && eyear == null){
+			}else if(eventseriesid != null && syear.equals("") && eyear.equals("")){
 				// get a complete eventseries - there were no dates entered 
 				rs = stmt.executeQuery("SELECT pub.publication_id,pub.event_id FROM pub_evt pub WHERE EXISTS" +
 						" (SELECT * FROM evt_evs evt WHERE evt.event_id=pub.event_id AND " +
