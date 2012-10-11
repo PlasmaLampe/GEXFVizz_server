@@ -1,0 +1,15 @@
+DB_USER=pgknowaan
+DB_PASSWORD=knowAAN3110
+PATH_TO_DATABASES=/var/www/dbs.txt
+MYSQL_PREFIX=jdbc:mysql://aan.cs.upb.de/
+APACHE_PATH=/var/www/
+CIRCOS_BIN_PREFIX=/var/www/circos/
+CIRCOS_GFX_PREFIX=/var/www/circos/gfx/
+CIRCOS_DATA_PREFIX=/var/www/circos/data/
+CIRCOS_DATA_ORDERCHR=/var/www/circos/tools/orderchr/
+DOMAIN_PREFIX=http://131.234.31.148/vizz_neu.php?id=
+HTTPIP=http://131.234.31.148/
+TomcatURLToServlet=http://131.234.31.148:8080/GEXFServer/Servlet?
+DEBUG=true
+TESTPATH=/home/joerg/workspace_ee/localGEXF/Tests/gexfWebservice/Tests/
+MEMORY_FILE=/var/www/memory.tmp
