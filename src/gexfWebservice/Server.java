@@ -34,13 +34,17 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	private static final long serialVersionUID = 1L;
 	
 	public static void main(String [] args){
+		Tools.initParameter();
+		
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		} 
 		
 		try {
 			LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
-			System.out.println("created registry ...");
+			
+			if(Settings.DEBUG)
+				System.out.println("created registry ...");
 		}catch (RemoteException ex) {
 			System.out.println(ex.getMessage());
 		}
@@ -48,7 +52,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		try {
 			Server myserv = new Server();
 			LocateRegistry.getRegistry().rebind("Server", myserv);
-			System.out.println("finished binding server name ...");
+			
+			if(Settings.DEBUG)
+				System.out.println("finished binding server name ...");
 		}catch (RemoteException ex) {
 			System.out.println(ex.getMessage());
 		}
@@ -56,14 +62,18 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	
 	public Server() throws RemoteException{
 		super();
-		System.out.println("Server created...");
+		
+		if(Settings.DEBUG)
+			System.out.println("Server created...");
 	}
     
 	private void writeUsedMemoryToFile(){
 	    Runtime runtime = Runtime.getRuntime();
 	    // Calculate the used memory
 	    long memory = runtime.totalMemory() - runtime.freeMemory();
-	    System.out.println("Used memory: " + Tools.bytesToMegabytes(memory));
+	    
+	    if(Settings.DEBUG)
+	    	System.out.println("Used memory: " + Tools.bytesToMegabytes(memory));
 	    
 	    // write to file
 	    Tools.createFile(Settings.MEMORY_FILE, ""+Tools.bytesToMegabytes(memory));

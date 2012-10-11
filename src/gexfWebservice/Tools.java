@@ -100,4 +100,74 @@ public class Tools {
 	public static long bytesToMegabytes(long bytes) {
 		return bytes / MEGABYTE;
 	}
+	
+	/**
+	 * This method initializes the global methods of the
+	 * application with the help of the settings.txt file
+	 */
+	public static void initParameter(){
+    	File tempfile = new File(Settings.CFG_FILE);
+
+    	try {
+    		BufferedReader input =  new BufferedReader(new FileReader(tempfile));
+    		try {
+    			String line = null; 
+    			while (( line = input.readLine()) != null){
+    				String token[] =  line.split("=");
+    				
+    				switch(token[0].replaceAll("\t", "").trim()){
+    				case "DB_USER":
+    					Settings.DB_USER = token[1];
+    					break;
+    				case "DB_PASSWORD":
+    					Settings.DB_PASSWORD = token[1];
+    					break;		
+    				case "PATH_TO_DATABASES":
+    					Settings.PATH_TO_DATABASES = token[1];
+    					break;
+    				case "MYSQL_PREFIX":
+    					Settings.MYSQL_PREFIX = token[1];
+    					break;
+    				case "APACHE_PATH":
+    					Settings.APACHE_PATH = token[1];
+    					break;
+    				case "CIRCOS_BIN_PREFIX":
+    					Settings.CIRCOS_BIN_PREFIX = token[1];
+    					break;
+    				case "CIRCOS_GFX_PREFIX":
+    					Settings.CIRCOS_GFX_PREFIX = token[1];
+    					break;
+    				case "CIRCOS_DATA_PREFIX":
+    					Settings.CIRCOS_DATA_PREFIX = token[1];
+    					break;
+    				case "CIRCOS_DATA_ORDERCHR":
+    					Settings.CIRCOS_DATA_ORDERCHR = token[1];
+    					break;
+    				case "DOMAIN_PREFIX":
+    					Settings.DOMAIN_PREFIX = token[1];
+    					break;
+    				case "HTTPIP":
+    					Settings.HTTPIP = token[1];
+    					break;
+    				case "TomcatURLToServlet":
+    					Settings.TomcatURLToServlet = token[1];
+    					break;
+    				case "DEBUG":
+    					Settings.DEBUG = Boolean.parseBoolean(token[1]);
+    					break;
+    				case "TESTPATH":
+    					Settings.TESTPATH = token[1];
+    					break;
+    				case "MEMORY_FILE":
+    					Settings.MEMORY_FILE = token[1];
+    					break;
+    				}
+    			}
+    		}finally {
+    			input.close();
+    		}
+    	}catch (Exception e){
+    		e.printStackTrace();
+    	}
+	}
 }
