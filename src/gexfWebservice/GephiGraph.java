@@ -22,18 +22,16 @@ public class GephiGraph {
 	protected Set<String> setOfPublicationIDs;
 	protected String gexfGraph;
 	
-	protected String eventid;
 	protected String eventseriesid;
 	protected String syear;
 	protected String eyear;
 	
-	public GephiGraph(String eventid, String eventseriesid, String syear, String eyear) {
+	public GephiGraph(String eventseriesid, String syear, String eyear) {
 		con = null;
 		gexfGraph = "";
 		mapOfPublications = new HashMap<String, Publication>();
 		setOfPublicationIDs = new HashSet<String>();
 		
-		this.eventid = eventid;
 		this.eventseriesid = eventseriesid;
 		this.syear = syear;
 		this.eyear = eyear;
@@ -67,10 +65,7 @@ public class GephiGraph {
 			Statement stmt = con.createStatement();
 			ResultSet rs = null;
 
-			if(eventseriesid == null){
-				// get a specific eventid
-				rs = stmt.executeQuery( "SELECT publication_id FROM pub_evt WHERE event_id =\""+eventid+"\"");
-			}else if(eventseriesid != null && syear.equals("") && eyear.equals("")){
+			if(eventseriesid != null && syear.equals("") && eyear.equals("")){
 				// get a complete eventseries - there were no dates entered 
 				rs = stmt.executeQuery("SELECT pub.publication_id,pub.event_id FROM pub_evt pub WHERE EXISTS" +
 						" (SELECT * FROM evt_evs evt WHERE evt.event_id=pub.event_id AND " +
@@ -264,9 +259,9 @@ public class GephiGraph {
  */
 class CoCitationGraph extends GephiGraph{
 	
-	public CoCitationGraph(String eventid, String eventseriesid, String syear,
+	public CoCitationGraph(String eventseriesid, String syear,
 			String eyear) {
-		super(eventid, eventseriesid, syear, eyear);
+		super(eventseriesid, syear, eyear);
 	}
 
 	/**
@@ -358,9 +353,9 @@ class CoCitationGraph extends GephiGraph{
 class BibliographicCouplingGraph extends GephiGraph{
 	private TreeMap<Integer, ArrayList<String>> bib_coup_count; // this variable is needed for the tabular visualization of the edges
 	private HashMap<String,String> labelToIDMap;
-	public BibliographicCouplingGraph(String eventid, String eventseriesid, String syear,
+	public BibliographicCouplingGraph(String eventseriesid, String syear,
 			String eyear) {
-		super(eventid, eventseriesid, syear, eyear);
+		super(eventseriesid, syear, eyear);
 		
 		bib_coup_count = new TreeMap<Integer, ArrayList<String>>();
 		labelToIDMap = new HashMap<String,String>();

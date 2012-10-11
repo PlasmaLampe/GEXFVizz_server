@@ -21,10 +21,10 @@ public class Tests {
 		}
 	}
 	
-	@Test public void getGraphPathTest(){
+	@Test public void getGraphPathTestBC(){
 		try {
 			Server serv = new Server();
-			serv.getGraphPath("bc", null, "02a48acb-fedc-474c-85f9-a76ba0066599", "2006", "2012");
+			serv.getGraphPath("bc", "02a48acb-fedc-474c-85f9-a76ba0066599", "2006", "2012");
 			String resultContent = Tools.getContent(Settings.APACHE_PATH + "/hash/a62c288ef85e87c00bf6893454e7a97b1d7ae05651c8ad4907f7817ae9fa015b.gexf");
 			String expected = Tools.getContent(Settings.TESTPATH + "bc_test_ectel0612.gexf");
 			assertTrue(resultContent.equals(expected));
@@ -33,7 +33,30 @@ public class Tests {
 		}
 	}
 	
-	@Test public void getCircosPathTest(){
+	@Test public void getGraphPathTestCC(){
+		try {
+			Server serv = new Server();
+			serv.getGraphPath("cc", "02a48acb-fedc-474c-85f9-a76ba0066599", "2006", "2012");
+			String resultContent = Tools.getContent(Settings.APACHE_PATH + "/hash/a62c288ef85e87c00bf6893454e7a97b1d7ae05651c8ad4907f7817ae9fa015b.gexf");
+			String expected = Tools.getContent(Settings.TESTPATH + "cc_test_ectel0612.gexf");
+			assertTrue(resultContent.equals(expected));
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Test public void getCircosPathTestBC(){
+		try{
+			Server serv = new Server();
+			String result = serv.getCircosPath(Settings.TESTPATH + "bc_test_ectel0612.gexf", "bc", 10, true);
+			String expected = "circos/gfx/2b845e704f33800606ac72a604dd2ebdd66d50eb667575cef0ff3d8b1db29a0b_bc_10.png";
+			assertTrue(expected.equals(result));
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Test public void getCircosPathTestCC(){
 		try{
 			Server serv = new Server();
 			String result = serv.getCircosPath(Settings.TESTPATH + "bc_test_ectel0612.gexf", "cc", 10, true);
@@ -70,7 +93,7 @@ public class Tests {
 	@Test public void getBCEdgesTest(){
 		try{
 			Server serv = new Server();
-			Tools.createFile(Settings.TESTPATH + "temp.tmp", serv.getBCEdges(null, "02a48acb-fedc-474c-85f9-a76ba0066599", "2006", "2012", 10000));
+			Tools.createFile(Settings.TESTPATH + "temp.tmp", serv.getBCEdges("02a48acb-fedc-474c-85f9-a76ba0066599", "2006", "2012", 10000));
 			String result = Tools.getContent(Settings.TESTPATH + "temp.tmp");
 			String expected = Tools.getContent(Settings.TESTPATH + "bcEdgesTest.txt");
 			assertTrue(result.equals(expected));

@@ -143,7 +143,9 @@ public class Gephi{
 
 			CircosTuple tuple = new CircosTuple(myedges, mynodes);
 
-			container = null;
+			graphModel.clear(); // clear the graph to prevent memory overflow ...
+			
+			container.closeLoader();
 			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
@@ -215,7 +217,9 @@ public class Gephi{
 			importController.process(container, new DefaultProcessor(), workspace);
 			DirectedGraph graph = graphModel.getDirectedGraph();
 			
-			container = null;
+			graphModel.clear(); // clear the graph to prevent memory overflow ...
+			
+			container.closeLoader();
 			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
@@ -237,7 +241,8 @@ public class Gephi{
         try {
             File file = new File(path);
         	container = importController.importFile(file);
-            container.getLoader();
+            //container.getLoader();
+
         } catch (Exception ex) {
             ex.printStackTrace();
             return null;
@@ -264,7 +269,9 @@ public class Gephi{
 			importController.process(container, new DefaultProcessor(), workspace);
 			DirectedGraph graph = graphModel.getDirectedGraph();
 			
-			container = null;
+			graphModel.clear(); // clear the graph to prevent memory overflow ...
+			
+			container.closeLoader();
 			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
@@ -299,7 +306,9 @@ public class Gephi{
 			dens.setDirected(false);
 			dens.execute(graphModel, attributeModel);	
 			
-			container = null;
+			graphModel.clear(); // clear the graph to prevent memory overflow ...
+			
+			container.closeLoader();
 			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
@@ -339,7 +348,7 @@ public class Gephi{
 			
 			Degree deg = new Degree();
 			deg.execute(graphModel, attributeModel);
-			 
+			
 			AttributeColumn betweennessColumn = attributeModel.getNodeTable().getColumn(GraphDistance.BETWEENNESS);
 			AttributeColumn closenessColumn = attributeModel.getNodeTable().getColumn(GraphDistance.CLOSENESS);
 			AttributeColumn degreeColumn = attributeModel.getNodeTable().getColumn(Degree.DEGREE);
@@ -396,7 +405,9 @@ public class Gephi{
 			output += printToXML(graph, dc);
 			output +="\t</degreeCentrality>\n</top>";
 			
-			container = null;
+			graphModel.clear(); // clear the graph to prevent memory overflow ...
+			
+			container.closeLoader();
 			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();
@@ -458,7 +469,7 @@ public class Gephi{
 			Runnable run = pc.saveProject(pc.getCurrentProject(), new File(projectpath));
 			run.run();
 			
-			container = null;
+			container.closeLoader();
 			pc.cleanWorkspace(workspace);
 			pc.closeCurrentWorkspace();
 			pc.closeCurrentProject();

@@ -17,6 +17,8 @@ import java.io.FileWriter;
  *
  */
 public class Tools {
+	private static final long MEGABYTE = 1024L * 1024L;
+	
     /**
      * The methods checks if a given file exists. 
      * If the file does not exist, the method creates it and
@@ -89,5 +91,13 @@ public class Tools {
 		result = result / 100;
 		return result;
 	}
-	
+
+	/**
+	 * Converts bytes to megabytes
+	 * @param bytes that should be converted
+	 * @return the given bytes as megabytes
+	 */
+	public static long bytesToMegabytes(long bytes) {
+		return bytes / MEGABYTE;
+	}
 }

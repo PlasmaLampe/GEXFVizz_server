@@ -33,12 +33,42 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	private static String lastHashValue = "";
 	private static final long serialVersionUID = 1L;
 	
-	public Server() throws RemoteException
-	{
+	public static void main(String [] args){
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new RMISecurityManager());
+		} 
+		
+		try {
+			LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
+			System.out.println("created registry ...");
+		}catch (RemoteException ex) {
+			System.out.println(ex.getMessage());
+		}
+		
+		try {
+			Server myserv = new Server();
+			LocateRegistry.getRegistry().rebind("Server", myserv);
+			System.out.println("finished binding server name ...");
+		}catch (RemoteException ex) {
+			System.out.println(ex.getMessage());
+		}
+	}
+	
+	public Server() throws RemoteException{
 		super();
 		System.out.println("Server created...");
 	}
     
+	private void writeUsedMemoryToFile(){
+	    Runtime runtime = Runtime.getRuntime();
+	    // Calculate the used memory
+	    long memory = runtime.totalMemory() - runtime.freeMemory();
+	    System.out.println("Used memory: " + Tools.bytesToMegabytes(memory));
+	    
+	    // write to file
+	    Tools.createFile(Settings.MEMORY_FILE, ""+Tools.bytesToMegabytes(memory));
+	}
+	
     /**
      * The method hashes the content of the given file and 
      * returns the SHA256 hash as a return value
@@ -123,6 +153,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @return a string that contains the path to the image 
 	 */
 	public String getLocalCircos(String path, String item, String metric) throws RemoteException {
+		writeUsedMemoryToFile();
 		String hashname = hashCodeSHA256(path);
 		
 		CircosConfFile circconf = new CircosConfFile(false);
@@ -173,27 +204,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		
 	}
 
-	public static void main(String [] args){	
-		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
-		} 
-		
-		try {
-			LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
-			System.out.println("created registry ...");
-		}catch (RemoteException ex) {
-			System.out.println(ex.getMessage());
-		}
-		
-		try {
-			Server myserv = new Server();
-			LocateRegistry.getRegistry().rebind("Server", myserv);
-			System.out.println("finished binding server name ...");
-		}catch (RemoteException ex) {
-			System.out.println(ex.getMessage());
-		}
-	}
-
 	/**
 	 * This method returns an XML String that contains all SNA metrics of the given gexf file
 	 * 
@@ -201,9 +211,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @return a XML string that contains all metrics
 	 */
 	public String getMetrics(String path) throws RemoteException {
+		writeUsedMemoryToFile();
 		Gephi gephi = new Gephi();
 		String result = gephi.getMetrics(path);
-		gephi = null;
 		
 		return result;
 	}
@@ -219,8 +229,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @param rank the number of edges that should be generated
 	 * @return a string that contains a HTML table with the edges
 	 */
-	public String getBCEdges(String eventid,String eventseriesid,String syear,String eyear, int rank) throws RemoteException {
-		BibliographicCouplingGraph ggraph = new BibliographicCouplingGraph(eventid, eventseriesid, syear, eyear);
+	public String getBCEdges(String eventseriesid,String syear,String eyear, int rank) throws RemoteException {
+		writeUsedMemoryToFile();
+		BibliographicCouplingGraph ggraph = new BibliographicCouplingGraph(eventseriesid, syear, eyear);
 		
 		ggraph.connectToDB(findCorrectDatabase(eventseriesid),Settings.DB_USER,Settings.DB_PASSWORD);
 		
@@ -275,10 +286,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @return a string that contains the number of nodes and edges of the graph
 	 */
 	public String getNodesAndEdges(String path) throws RemoteException {
+		writeUsedMemoryToFile();
 		Gephi gephi = new Gephi();
 		int nodes = gephi.getNodes(path);
 		int edges = gephi.getEdges(path);
-		gephi = null;
 		
 		return nodes+"#"+edges;
 	}
@@ -291,9 +302,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @return a double value that contains the density of the graph
 	 */
 	public double getDensity(String path) throws RemoteException {
+		writeUsedMemoryToFile();
 		Gephi gephi = new Gephi();
 		double returnvalue = gephi.getDensity(path);
-		gephi = null;
 		
 		return returnvalue;
 	}
@@ -310,6 +321,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @return a string that contains the path to the image 
 	 */
 	public String getCircosPath(String filename, String metric, int rank, boolean preview) throws RemoteException {
+		writeUsedMemoryToFile();
 		String hashname = hashCodeSHA256(filename);
 		
 		CircosConfFile circconf = new CircosConfFile(preview);
@@ -358,15 +370,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @param eyear the end year
 	 * @return a string that contains the path to the gexf file
 	 */
-	public String getGraphPath(String type, String eventid, String eventseriesid, String syear, String eyear) throws RemoteException {
+	public String getGraphPath(String type, String eventseriesid, String syear, String eyear) throws RemoteException {
+		writeUsedMemoryToFile();
 		GephiGraph ggraph = null;
 		
 		switch(type){
 		case "cc":
-			ggraph = new CoCitationGraph(eventid, eventseriesid, syear, eyear);
+			ggraph = new CoCitationGraph(eventseriesid, syear, eyear);
 			break;
 		case "bc":
-			ggraph = new BibliographicCouplingGraph(eventid, eventseriesid, syear, eyear);
+			ggraph = new BibliographicCouplingGraph(eventseriesid, syear, eyear);
 			break;
 		}
 		
@@ -460,9 +473,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @return a string that contains the path to the .gephi file
 	 */
 	public String getPathToProject(String hashPath) throws RemoteException {
+		writeUsedMemoryToFile();
 		Gephi gephi = new Gephi();	
 		String returnvalue = gephi.getProject(hashPath);
-		gephi = null;
 		
 		return returnvalue;
 	}
